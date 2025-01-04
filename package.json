@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
+    "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.21.0",
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
