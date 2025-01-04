@@ -17,6 +17,7 @@ export default function ListingsTable({
     location: ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [expandedId, setExpandedId] = useState(null)
 
   // Clean price string to number
   const getPriceNumber = (price) => {
@@ -81,6 +82,10 @@ export default function ListingsTable({
   }
 
   const totalPages = Math.ceil(totalCount / pageSize)
+
+  const toggleExpand = (articleId) => {
+    setExpandedId(expandedId === articleId ? null : articleId)
+  }
 
   return (
     <div>
@@ -202,68 +207,148 @@ export default function ListingsTable({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredAndSortedListings.map((listing) => (
-              <tr key={listing.article_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {listing.thumbnail_url ? (
-                    <div className="h-20 w-20 relative">
-                      <img
-                        src={listing.thumbnail_url}
-                        alt={listing.title}
-                        className="h-full w-full object-cover rounded-md"
-                        loading="lazy"
-                      />
-                      {listing.url && (
-                        <a
-                          href={listing.url}
-                          target="_blank"
+              <>
+                <tr 
+                  key={listing.article_id} 
+                  className={`hover:bg-gray-50 cursor-pointer ${expandedId === listing.article_id ? 'bg-blue-50' : ''}`}
+                  onClick={() => toggleExpand(listing.article_id)}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {listing.thumbnail_url ? (
+                      <div className="h-20 w-20 relative">
+                        <img
+                          src={listing.thumbnail_url}
+                          alt={listing.title}
+                          className="h-full w-full object-cover rounded-md"
+                          loading="lazy"
+                        />
+                        {listing.url && (
+                          <a
+                            href={listing.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute inset-0"
+                          >
+                            <span className="sr-only">View details</span>
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="h-20 w-20 bg-gray-100 flex items-center justify-center rounded-md">
+                        <span className="text-gray-400">No image</span>
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm font-medium text-blue-600">
+                      {listing.url ? (
+                        <a 
+                          href={listing.url} 
+                          target="_blank" 
                           rel="noopener noreferrer"
-                          className="absolute inset-0"
+                          className="hover:underline"
                         >
-                          <span className="sr-only">View details</span>
+                          {listing.title}
                         </a>
+                      ) : (
+                        listing.title
                       )}
                     </div>
-                  ) : (
-                    <div className="h-20 w-20 bg-gray-100 flex items-center justify-center rounded-md">
-                      <span className="text-gray-400">No image</span>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-blue-600">
-                    {listing.url ? (
-                      <a 
-                        href={listing.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:underline"
-                      >
-                        {listing.title}
-                      </a>
-                    ) : (
-                      listing.title
-                    )}
-                  </div>
-                  {(listing.long_desc || listing.description) && (
-                    <div className="text-sm text-gray-500 mt-1">
-                      <div className="max-h-24 overflow-y-auto pr-4 whitespace-pre-wrap break-words">
-                        {listing.long_desc || listing.description}
+                    {(listing.long_desc || listing.description) && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        <div className="max-h-24 overflow-y-auto pr-4 whitespace-pre-wrap break-words">
+                          {listing.description}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                    {listing.price}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {listing.location}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(listing.last_seen).toLocaleDateString()}
-                </td>
-              </tr>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      {listing.price}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {listing.location}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(listing.last_seen).toLocaleDateString()}
+                  </td>
+                </tr>
+                {expandedId === listing.article_id && (
+                  <tr>
+                    <td colSpan="5" className="px-6 py-4 bg-gray-50">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="md:col-span-2 space-y-6">
+                          <div>
+                            <h3 className="text-lg font-medium text-gray-900">
+                              {listing.title}
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Article ID: {listing.article_id}
+                            </p>
+                          </div>
+
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
+                            <div className="prose prose-sm text-gray-600 whitespace-pre-wrap bg-white p-4 rounded-lg shadow-sm">
+                              {listing.long_desc || listing.description}
+                            </div>
+                          </div>
+
+                          {listing.url && (
+                            <div className="mt-4">
+                              <a
+                                href={listing.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              >
+                                View Original Listing
+                              </a>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-6">
+                          {listing.thumbnail_url && (
+                            <div>
+                              <img
+                                src={listing.thumbnail_url}
+                                alt={listing.title}
+                                className="w-full rounded-lg shadow-lg"
+                              />
+                            </div>
+                          )}
+
+                          <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">Price</h4>
+                              <p className="mt-1 text-base font-semibold text-green-600">{listing.price}</p>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">Location</h4>
+                              <p className="mt-1 text-sm text-gray-600">{listing.location}</p>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">Posted</h4>
+                              <p className="mt-1 text-sm text-gray-600">{listing.timestamp}</p>
+                            </div>
+
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-900">Last Seen</h4>
+                              <p className="mt-1 text-sm text-gray-600">
+                                {new Date(listing.last_seen).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </>
             ))}
           </tbody>
         </table>
