@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useRouter } from 'next/router'
 import { supabase } from '../supabase'
 
 export default function AuthForm() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -27,6 +29,7 @@ export default function AuthForm() {
           password,
         })
         if (error) throw error
+        router.push('/dashboard')
       }
     } catch (error) {
       setMessage(error.message)

@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../supabase'
 import Logo from '../components/Logo'
 import AuthForm from '../components/AuthForm'
+import { useRouter } from 'next/router'
 
 export default function Home() {
+  const router = useRouter()
   const [user, setUser] = useState(null)
   const [showEmailAuth, setShowEmailAuth] = useState(false)
 
@@ -27,6 +29,7 @@ export default function Home() {
           access_type: 'offline',
           prompt: 'consent',
         },
+        redirectTo: `${window.location.origin}/dashboard`
       },
     })
     if (error) console.error('Error logging in:', error.message)
