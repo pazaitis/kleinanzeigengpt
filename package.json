@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "seed": "node utils/seed-data.js"
+    "seed": "node utils/seed-data.js",
+    "deploy": "git add . && git commit -m \"${msg:-Update application}\" && git push origin main"
   },
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
