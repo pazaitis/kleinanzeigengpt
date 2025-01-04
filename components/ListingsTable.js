@@ -146,11 +146,17 @@ export default function ListingsTable({
             <tr>
               <th 
                 scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Image
+              </th>
+              <th 
+                scope="col" 
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                 onClick={() => handleSort('title')}
               >
                 <div className="flex items-center">
-                  Title
+                  Title & Description
                   {sortConfig.key === 'title' && (
                     sortConfig.direction === 'asc' ? <ChevronUpIcon className="w-4 h-4 ml-1" /> : <ChevronDownIcon className="w-4 h-4 ml-1" />
                   )}
@@ -198,9 +204,52 @@ export default function ListingsTable({
             {filteredAndSortedListings.map((listing) => (
               <tr key={listing.article_id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-blue-600">{listing.title}</div>
-                  {listing.description && (
-                    <div className="text-sm text-gray-500 truncate max-w-md">{listing.description}</div>
+                  {listing.thumbnail_url ? (
+                    <div className="h-20 w-20 relative">
+                      <img
+                        src={listing.thumbnail_url}
+                        alt={listing.title}
+                        className="h-full w-full object-cover rounded-md"
+                        loading="lazy"
+                      />
+                      {listing.url && (
+                        <a
+                          href={listing.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="absolute inset-0"
+                        >
+                          <span className="sr-only">View details</span>
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="h-20 w-20 bg-gray-100 flex items-center justify-center rounded-md">
+                      <span className="text-gray-400">No image</span>
+                    </div>
+                  )}
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm font-medium text-blue-600">
+                    {listing.url ? (
+                      <a 
+                        href={listing.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                      >
+                        {listing.title}
+                      </a>
+                    ) : (
+                      listing.title
+                    )}
+                  </div>
+                  {(listing.long_desc || listing.description) && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      <div className="max-h-24 overflow-y-auto pr-4 whitespace-pre-wrap break-words">
+                        {listing.long_desc || listing.description}
+                      </div>
+                    </div>
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">

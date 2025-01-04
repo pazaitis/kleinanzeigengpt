@@ -8,15 +8,32 @@ export default async function handler(req, res) {
 
   try {
     const listings = await scrapeListings()
+    console.log('First listing example:', listings[0]) // Debug log
     
     const { data, error } = await supabaseAdmin
       .from('listings')
-      .upsert(listings, {
-        onConflict: 'article_id',
-        returning: true,
-      })
+      .upsert(
+        listings.map(listing => ({
+          article_id: listing.article_id,
+          title: listing.title,
+          price: listing.price,
+          location: listing.location,
+          timestamp: listing.timestamp,
+          description: listing.description,
+          url: listing.url,
+          thumbnail_url: listing.thumbnail_url,
+          last_seen: listing.last_seen
+        })),
+        {
+          onConflict: 'article_id',
+          returning: true,
+        }
+      )
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase error:', error)
+      throw error
+    }
 
     res.status(200).json({ success: true, count: data.length })
   } catch (error) {
