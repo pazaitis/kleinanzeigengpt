@@ -9,7 +9,8 @@
     "start": "next start",
     "seed": "node utils/seed-data.js",
     "deploy": "git add . && git commit -m \"${msg:-Update application}\" && git push origin main",
-    "scrape": "node scripts/test-scraper.mjs"
+    "scrape": "node scripts/test-scraper.mjs",
+    "generate-favicon": "node scripts/generate-favicon.mjs"
   },
   "dependencies": {
     "@faker-js/faker": "^8.0.2",
@@ -20,7 +21,8 @@
     "dotenv": "^16.4.7",
     "next": "^13.4.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
