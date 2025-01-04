@@ -8,12 +8,15 @@ export default function Dashboard() {
   const [user, setUser] = useState(null)
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
   const router = useRouter()
 
   useEffect(() => {
     checkUser()
     fetchListings()
-  }, [])
+  }, [page, pageSize])
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -26,11 +29,18 @@ export default function Dashboard() {
 
   const fetchListings = async () => {
     try {
+      const { count, error: countError } = await supabase
+        .from('listings')
+        .select('*', { count: 'exact', head: true })
+
+      if (countError) throw countError
+      setTotalCount(count)
+
       const { data, error } = await supabase
         .from('listings')
         .select('*')
         .order('last_seen', { ascending: false })
-        .limit(10)
+        .range((page - 1) * pageSize, page * pageSize - 1)
 
       if (error) throw error
       setListings(data || [])
@@ -66,6 +76,12 @@ export default function Dashboard() {
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">{user?.email}</span>
               <button
+                onClick={() => router.push('/profile')}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                Profile
+              </button>
+              <button
                 onClick={handleLogout}
                 className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
               >
@@ -81,7 +97,7 @@ export default function Dashboard() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Recent Listings
+                All Listings
               </h3>
               <button
                 onClick={fetchListings}
@@ -90,7 +106,14 @@ export default function Dashboard() {
                 Refresh Data
               </button>
             </div>
-            <ListingsTable listings={listings} />
+            <ListingsTable 
+              listings={listings}
+              totalCount={totalCount}
+              page={page}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         </div>
       </main>

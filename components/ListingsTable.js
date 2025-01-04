@@ -1,7 +1,14 @@
 import { useState, useMemo } from 'react'
 import { ChevronUpIcon, ChevronDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
 
-export default function ListingsTable({ listings }) {
+export default function ListingsTable({ 
+  listings, 
+  totalCount,
+  page,
+  pageSize,
+  onPageChange,
+  onPageSizeChange 
+}) {
   const [sortConfig, setSortConfig] = useState({ key: 'last_seen', direction: 'desc' })
   const [filters, setFilters] = useState({
     priceMin: '',
@@ -72,6 +79,8 @@ export default function ListingsTable({ listings }) {
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'
     })
   }
+
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
     <div>
@@ -209,6 +218,73 @@ export default function ListingsTable({ listings }) {
             ))}
           </tbody>
         </table>
+        
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+          <div className="flex-1 flex justify-between items-center">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing{' '}
+                <span className="font-medium">{(page - 1) * pageSize + 1}</span>
+                {' '}-{' '}
+                <span className="font-medium">
+                  {Math.min(page * pageSize, totalCount)}
+                </span>
+                {' '}of{' '}
+                <span className="font-medium">{totalCount}</span>
+                {' '}results
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <select
+                value={pageSize}
+                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+                className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              >
+                <option value={10}>10 per page</option>
+                <option value={25}>25 per page</option>
+                <option value={50}>50 per page</option>
+                <option value={100}>100 per page</option>
+              </select>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={() => onPageChange(page - 1)}
+                  disabled={page === 1}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${
+                    page === 1
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  Previous
+                </button>
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i + 1}
+                    onClick={() => onPageChange(i + 1)}
+                    className={`relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium ${
+                      page === i + 1
+                        ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                        : 'text-gray-500 hover:bg-gray-50'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button
+                  onClick={() => onPageChange(page + 1)}
+                  disabled={page === totalPages}
+                  className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${
+                    page === totalPages
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  Next
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
