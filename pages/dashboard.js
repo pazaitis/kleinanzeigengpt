@@ -38,7 +38,13 @@ export default function Dashboard() {
 
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select(`
+          *,
+          iphone_analysis (
+            iphone_model,
+            storage_gb
+          )
+        `)
         .order('last_seen', { ascending: false })
         .range((page - 1) * pageSize, page * pageSize - 1)
 

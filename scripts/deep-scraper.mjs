@@ -21,11 +21,26 @@ async function scrapeDetailPage(url) {
     })
 
     const $ = cheerio.load(response.data)
-    const longDesc = $('p[itemprop="description"]').text().trim()
     
-    console.log('HTML snippet:', $('p[itemprop="description"]').parent().html())
+    // Get the description element
+    const descElement = $('p[itemprop="description"]')
+    
+    // Replace <br> tags with newlines and preserve paragraph spacing
+    let longDesc = descElement
+      .html()
+      .replace(/<br\s*\/?>/gi, '\n') // Replace <br> tags with newlines
+      .replace(/<\/p><p>/gi, '\n\n')  // Add double newlines between paragraphs
+    
+    // Clean up any remaining HTML tags
+    longDesc = $('<div>').html(longDesc).text()
+    
+    // Clean up multiple consecutive newlines and spaces
+    longDesc = longDesc
+      .replace(/\n{3,}/g, '\n\n')  // Replace 3+ newlines with 2
+      .replace(/[ \t]+/g, ' ')     // Replace multiple spaces with single space
+      .trim()                      // Remove leading/trailing whitespace
+    
     console.log('Scraped description:', longDesc.substring(0, 100) + '...')
-    
     return longDesc
   } catch (error) {
     console.error(`Error scraping ${url}:`, error.message)

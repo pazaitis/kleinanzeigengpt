@@ -271,7 +271,7 @@ export default function ListingsTable({
                     {listing.location}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {new Date(listing.last_seen).toLocaleDateString()}
+                    {new Date(listing.last_seen).toLocaleString()}
                   </td>
                 </tr>
                 {expandedId === listing.article_id && (
@@ -290,8 +290,12 @@ export default function ListingsTable({
 
                           <div>
                             <h4 className="text-sm font-medium text-gray-900 mb-2">Description</h4>
-                            <div className="prose prose-sm text-gray-600 whitespace-pre-wrap bg-white p-4 rounded-lg shadow-sm">
-                              {listing.long_desc || listing.description}
+                            <div className="prose prose-sm text-gray-600 bg-white p-4 rounded-lg shadow-sm">
+                              {listing.long_desc?.split('\n').map((paragraph, index) => (
+                                <p key={index} className="mb-2">
+                                  {paragraph}
+                                </p>
+                              ))}
                             </div>
                           </div>
 
@@ -305,6 +309,26 @@ export default function ListingsTable({
                               >
                                 View Original Listing
                               </a>
+                            </div>
+                          )}
+
+                          {listing.iphone_analysis && (
+                            <div className="bg-blue-50 p-4 rounded-lg shadow-sm space-y-4 border border-blue-100">
+                              <h4 className="text-sm font-medium text-blue-900">GPT Analysis Results</h4>
+                              <div className="space-y-3">
+                                <div>
+                                  <span className="text-xs font-medium text-blue-700">Identified Model</span>
+                                  <p className="mt-1 text-sm text-blue-800">
+                                    {listing.iphone_analysis.iphone_model || 'Unknown'}
+                                  </p>
+                                </div>
+                                <div>
+                                  <span className="text-xs font-medium text-blue-700">Storage Capacity</span>
+                                  <p className="mt-1 text-sm text-blue-800">
+                                    {listing.iphone_analysis.storage_gb ? `${listing.iphone_analysis.storage_gb} GB` : 'Unknown'}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>

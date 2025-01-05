@@ -11,9 +11,12 @@
     "deploy": "git add . && git commit -m \"${msg:-Update application}\" && git push origin main",
     "scrape": "node scripts/test-scraper.mjs",
     "deep-scrape": "node scripts/deep-scraper.mjs",
-    "generate-favicon": "node scripts/generate-favicon.mjs"
+    "generate-favicon": "node scripts/generate-favicon.mjs",
+    "analyze": "node scripts/analyze-listings.mjs",
+    "run-all": "node scripts/run-all.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.17.2",
     "@faker-js/faker": "^8.0.2",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.21.0",
