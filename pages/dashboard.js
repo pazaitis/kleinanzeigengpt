@@ -43,6 +43,11 @@ export default function Dashboard() {
           iphone_analysis (
             iphone_model,
             storage_gb
+          ),
+          listing_images (
+            id,
+            image_url,
+            is_main
           )
         `)
         .order('last_seen', { ascending: false })

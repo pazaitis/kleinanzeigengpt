@@ -1,5 +1,58 @@
 import { useState, useMemo } from 'react'
 import { ChevronUpIcon, ChevronDownIcon, FunnelIcon } from '@heroicons/react/24/outline'
+import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/solid'
+
+function ImageGallery({ images, initialIndex = 0, onClose }) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+
+  const showNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % images.length)
+  }
+
+  const showPrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2"
+      >
+        <XMarkIcon className="h-8 w-8" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            onClick={showPrevious}
+            className="absolute left-4 text-white hover:text-gray-300 p-2"
+          >
+            <ChevronLeftIcon className="h-8 w-8" />
+          </button>
+          <button
+            onClick={showNext}
+            className="absolute right-4 text-white hover:text-gray-300 p-2"
+          >
+            <ChevronRightIcon className="h-8 w-8" />
+          </button>
+        </>
+      )}
+
+      <div className="absolute top-4 left-4 text-white">
+        {currentIndex + 1} / {images.length}
+      </div>
+
+      <div className="max-w-[90vw] max-h-[90vh]">
+        <img
+          src={images[currentIndex].image_url}
+          alt={`Image ${currentIndex + 1}`}
+          className="max-w-full max-h-[90vh] object-contain"
+        />
+      </div>
+    </div>
+  )
+}
 
 export default function ListingsTable({ 
   listings, 
@@ -18,17 +71,18 @@ export default function ListingsTable({
   })
   const [showFilters, setShowFilters] = useState(false)
   const [expandedId, setExpandedId] = useState(null)
+  const [galleryOpen, setGalleryOpen] = useState(false)
+  const [galleryInitialIndex, setGalleryInitialIndex] = useState(0)
+  const [activeListingImages, setActiveListingImages] = useState(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
-  // Clean price string to number
   const getPriceNumber = (price) => {
     return parseFloat(price.replace('€', '').replace('.', '').trim())
   }
 
-  // Sort and filter listings
   const filteredAndSortedListings = useMemo(() => {
     let filtered = [...listings]
 
-    // Apply filters
     if (filters.search) {
       filtered = filtered.filter(item => 
         item.title.toLowerCase().includes(filters.search.toLowerCase()) ||
@@ -54,7 +108,6 @@ export default function ListingsTable({
       )
     }
 
-    // Apply sorting
     filtered.sort((a, b) => {
       if (sortConfig.key === 'price') {
         const aPrice = getPriceNumber(a.price)
@@ -84,7 +137,16 @@ export default function ListingsTable({
   const totalPages = Math.ceil(totalCount / pageSize)
 
   const toggleExpand = (articleId) => {
+    if (expandedId !== articleId) {
+      setCurrentImageIndex(0)
+    }
     setExpandedId(expandedId === articleId ? null : articleId)
+  }
+
+  const openGallery = (images, index) => {
+    setActiveListingImages(images)
+    setGalleryInitialIndex(index)
+    setGalleryOpen(true)
   }
 
   return (
@@ -334,7 +396,74 @@ export default function ListingsTable({
                         </div>
 
                         <div className="space-y-6">
-                          {listing.thumbnail_url && (
+                          {listing.listing_images?.length > 0 ? (
+                            <div className="space-y-2">
+                              <div className="relative group">
+                                <div 
+                                  className="w-full aspect-square relative overflow-hidden rounded-lg shadow-lg cursor-pointer"
+                                  onClick={() => openGallery(listing.listing_images, currentImageIndex)}
+                                >
+                                  <img
+                                    src={listing.listing_images[currentImageIndex].image_url}
+                                    alt={listing.title}
+                                    className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                                  />
+                                </div>
+                                
+                                {listing.listing_images.length > 1 && (
+                                  <>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setCurrentImageIndex((prev) => 
+                                          (prev - 1 + listing.listing_images.length) % listing.listing_images.length
+                                        )
+                                      }}
+                                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <ChevronLeftIcon className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setCurrentImageIndex((prev) => 
+                                          (prev + 1) % listing.listing_images.length
+                                        )
+                                      }}
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <ChevronRightIcon className="h-5 w-5" />
+                                    </button>
+                                    
+                                    <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-sm px-2 py-1 rounded">
+                                      {currentImageIndex + 1} / {listing.listing_images.length}
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                              
+                              {listing.listing_images.length > 1 && (
+                                <div className="grid grid-cols-4 gap-2">
+                                  {listing.listing_images.map((image, index) => (
+                                    <div 
+                                      key={image.id} 
+                                      className={`aspect-square relative overflow-hidden rounded-md shadow-sm cursor-pointer ${
+                                        index === currentImageIndex ? 'ring-2 ring-blue-500' : ''
+                                      }`}
+                                      onClick={() => setCurrentImageIndex(index)}
+                                    >
+                                      <img
+                                        src={image.image_url}
+                                        alt={`${listing.title} - Image ${index + 1}`}
+                                        className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                                        loading="lazy"
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : listing.thumbnail_url ? (
                             <div>
                               <img
                                 src={listing.thumbnail_url}
@@ -342,8 +471,8 @@ export default function ListingsTable({
                                 className="w-full rounded-lg shadow-lg"
                               />
                             </div>
-                          )}
-
+                          ) : null}
+                          
                           <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
                             <div>
                               <h4 className="text-sm font-medium text-gray-900">Price</h4>
@@ -444,6 +573,14 @@ export default function ListingsTable({
           </div>
         </div>
       </div>
+
+      {galleryOpen && activeListingImages && (
+        <ImageGallery
+          images={activeListingImages}
+          initialIndex={galleryInitialIndex}
+          onClose={() => setGalleryOpen(false)}
+        />
+      )}
     </div>
   )
 } 

@@ -22,29 +22,76 @@ async function scrapeDetailPage(url) {
 
     const $ = cheerio.load(response.data)
     
-    // Get the description element
+    // Get description
     const descElement = $('p[itemprop="description"]')
-    
-    // Replace <br> tags with newlines and preserve paragraph spacing
-    let longDesc = descElement
-      .html()
-      .replace(/<br\s*\/?>/gi, '\n') // Replace <br> tags with newlines
-      .replace(/<\/p><p>/gi, '\n\n')  // Add double newlines between paragraphs
-    
-    // Clean up any remaining HTML tags
+    let longDesc = descElement.html()
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p><p>/gi, '\n\n')
     longDesc = $('<div>').html(longDesc).text()
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/[ \t]+/g, ' ')
+      .trim()
+
+    // Get all gallery images
+    const images = []
+    $('.galleryimage-element').each((index, element) => {
+      const $el = $(element)
+      const imageUrl = $el.find('meta[itemprop="contentUrl"]').attr('content')
+      if (imageUrl && !imageUrl.includes('google_ads')) {
+        images.push({
+          url: imageUrl,
+          is_main: index === 0  // First image is usually the main one
+        })
+      }
+    })
     
-    // Clean up multiple consecutive newlines and spaces
-    longDesc = longDesc
-      .replace(/\n{3,}/g, '\n\n')  // Replace 3+ newlines with 2
-      .replace(/[ \t]+/g, ' ')     // Replace multiple spaces with single space
-      .trim()                      // Remove leading/trailing whitespace
-    
-    console.log('Scraped description:', longDesc.substring(0, 100) + '...')
-    return longDesc
+    return {
+      longDesc,
+      images
+    }
   } catch (error) {
     console.error(`Error scraping ${url}:`, error.message)
-    return null
+    return { longDesc: null, images: [] }
+  }
+}
+
+async function saveImages(listingId, images) {
+  for (const image of images) {
+    const { error } = await supabaseAdmin
+      .from('listing_images')
+      .upsert({
+        listing_id: listingId,
+        image_url: image.url,
+        is_main: image.is_main
+      }, {
+        onConflict: 'listing_id,image_url'
+      })
+
+    if (error) {
+      console.error(`Error saving image for listing ${listingId}:`, error)
+    }
+  }
+}
+
+async function processListing(listing) {
+  console.log(`Processing listing ${listing.article_id}...`)
+
+  const { longDesc, images } = await scrapeDetailPage(listing.url)
+  
+  if (longDesc) {
+    const { error: descError } = await supabaseAdmin
+      .from('listings')
+      .update({ long_desc: longDesc })
+      .eq('article_id', listing.article_id)
+
+    if (descError) {
+      console.error(`Error updating description for listing ${listing.article_id}:`, descError)
+    }
+  }
+
+  if (images.length > 0) {
+    await saveImages(listing.article_id, images)
+    console.log(`Saved ${images.length} images for listing ${listing.article_id}`)
   }
 }
 
@@ -52,7 +99,6 @@ async function deepScrape() {
   try {
     console.log('Starting deep scrape...')
 
-    // Get all listings with URLs but no long description
     const { data: listings, error } = await supabaseAdmin
       .from('listings')
       .select('article_id, url')
@@ -63,27 +109,8 @@ async function deepScrape() {
 
     console.log(`Found ${listings.length} listings to process`)
 
-    // Process each listing with a delay to avoid rate limiting
-    for (let i = 0; i < listings.length; i++) {
-      const listing = listings[i]
-      console.log(`Processing listing ${i + 1}/${listings.length}: ${listing.url}`)
-
-      const longDesc = await scrapeDetailPage(listing.url)
-      
-      if (longDesc) {
-        const { error: updateError } = await supabaseAdmin
-          .from('listings')
-          .update({ long_desc: longDesc })
-          .eq('article_id', listing.article_id)
-
-        if (updateError) {
-          console.error(`Error updating listing ${listing.article_id}:`, updateError)
-        } else {
-          console.log(`Updated listing ${listing.article_id}`)
-        }
-      }
-
-      // Add a delay between requests to avoid overwhelming the server
+    for (const listing of listings) {
+      await processListing(listing)
       await new Promise(resolve => setTimeout(resolve, 2000))
     }
 
