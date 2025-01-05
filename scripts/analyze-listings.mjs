@@ -15,36 +15,43 @@ const anthropic = new Anthropic({
 
 async function analyzeDescription(listing) {
   try {
-    const prompt = `Analyze this iPhone listing's title and description and extract two pieces of information:
+    const prompt = `Analyze this iPhone listing's title and description to extract the following information:
 1. The exact iPhone model being sold (e.g. "iPhone 12", "iPhone 15 Pro Max")
 2. The storage capacity in GB (e.g. 128, 256, 512)
+3. A rating for the condition of the device on a scale from 1 to 5, where 1 is poor and 5 is excellent. Highlight the text passages that influence this rating.
 
 Title: ${listing.title}
 Description: ${listing.long_desc}
 
-Return the information in this exact format (just these two lines):
+Return the information in this exact format:
 Model: [iPhone model]
-Storage: [number only, or Unknown if not specified]`
+Storage: [number only, or Unknown if not specified]
+Rating: [1-5]
+Highlights: [text passages that influenced the rating]`
 
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 50,
+      max_tokens: 150,
       messages: [{ role: 'user', content: prompt }],
     })
 
     const result = response.content[0].text.trim()
     const modelMatch = result.match(/Model: (.+)/)
     const storageMatch = result.match(/Storage: (.+)/)
+    const ratingMatch = result.match(/Rating: (\d)/)
+    const highlightsMatch = result.match(/Highlights: (.+)/)
 
     return {
       model: modelMatch ? modelMatch[1].trim() : 'Unknown',
       storage: storageMatch ? 
         (storageMatch[1].toLowerCase() === 'unknown' ? null : parseInt(storageMatch[1])) 
-        : null
+        : null,
+      rating: ratingMatch ? parseInt(ratingMatch[1]) : null,
+      highlights: highlightsMatch ? highlightsMatch[1].trim() : ''
     }
   } catch (error) {
     console.error('Error analyzing with Claude:', error)
-    return { model: 'Unknown', storage: null }
+    return { model: 'Unknown', storage: null, rating: null, highlights: '' }
   }
 }
 
@@ -58,7 +65,9 @@ async function analyzeListing(listing) {
     .upsert({
       listing_id: listing.article_id,
       iphone_model: analysis.model,
-      storage_gb: analysis.storage
+      storage_gb: analysis.storage,
+      rating: analysis.rating,
+      highlights: analysis.highlights
     }, {
       onConflict: 'listing_id'
     })
@@ -74,7 +83,10 @@ async function analyzeListings() {
   try {
     console.log('Starting iPhone analysis...')
 
-    // Get all listings with long descriptions that haven't been analyzed yet
+    // Get only listings that:
+    // 1. Have a long description
+    // 2. Don't have an existing analysis record
+    // 3. Haven't been analyzed before (no iphone_analysis entry)
     const { data: listings, error } = await supabaseAdmin
       .from('listings')
       .select(`
@@ -83,21 +95,27 @@ async function analyzeListings() {
         long_desc,
         iphone_analysis!left(iphone_model)
       `)
-      .not('long_desc', 'is', null)
-      .is('iphone_analysis.iphone_model', null)
+      .not('long_desc', 'is', null)  // Must have description
+      .is('iphone_analysis.iphone_model', null)  // No existing analysis
 
     if (error) throw error
 
-    console.log(`Found ${listings.length} listings to analyze`)
+    const unanalyzedCount = listings.length
+    console.log(`Found ${unanalyzedCount} unanalyzed listings`)
 
-    // Process each listing
+    if (unanalyzedCount === 0) {
+      console.log('No new listings to analyze. Exiting...')
+      return
+    }
+
+    // Process each unanalyzed listing
     for (const listing of listings) {
       await analyzeListing(listing)
       // Add a small delay between API calls
       await new Promise(resolve => setTimeout(resolve, 1000))
     }
 
-    console.log('Analysis completed!')
+    console.log(`Analysis completed! Processed ${unanalyzedCount} listings`)
   } catch (error) {
     console.error('Analysis error:', error)
   }

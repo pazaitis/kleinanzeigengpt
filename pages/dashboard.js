@@ -42,7 +42,9 @@ export default function Dashboard() {
           *,
           iphone_analysis (
             iphone_model,
-            storage_gb
+            storage_gb,
+            rating,
+            highlights
           ),
           listing_images (
             id,
