@@ -75,13 +75,49 @@ export default function ListingsTable({
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0)
   const [activeListingImages, setActiveListingImages] = useState(null)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [selectedModel, setSelectedModel] = useState(null)
+  const [selectedStorage, setSelectedStorage] = useState(null)
 
   const getPriceNumber = (price) => {
     return parseFloat(price.replace('€', '').replace('.', '').trim())
   }
 
+  const uniqueModels = useMemo(() => {
+    const models = listings
+      .filter(listing => listing.iphone_analysis?.iphone_model)
+      .map(listing => listing.iphone_analysis.iphone_model)
+      .filter((model, index, self) => 
+        model && model !== 'Unknown' && self.indexOf(model) === index
+      )
+      .sort()
+    return models
+  }, [listings])
+
+  const uniqueStorages = useMemo(() => {
+    const storages = listings
+      .filter(listing => listing.iphone_analysis?.storage_gb)
+      .map(listing => listing.iphone_analysis.storage_gb)
+      .filter((storage, index, self) => 
+        storage && self.indexOf(storage) === index
+      )
+      .sort((a, b) => a - b)
+    return storages
+  }, [listings])
+
   const filteredAndSortedListings = useMemo(() => {
     let filtered = [...listings]
+
+    if (selectedModel) {
+      filtered = filtered.filter(item => 
+        item.iphone_analysis?.iphone_model === selectedModel
+      )
+    }
+
+    if (selectedStorage) {
+      filtered = filtered.filter(item => 
+        item.iphone_analysis?.storage_gb === selectedStorage
+      )
+    }
 
     if (filters.search) {
       filtered = filtered.filter(item => 
@@ -125,7 +161,7 @@ export default function ListingsTable({
     })
 
     return filtered
-  }, [listings, sortConfig, filters])
+  }, [listings, sortConfig, filters, selectedModel, selectedStorage])
 
   const handleSort = (key) => {
     setSortConfig({
@@ -165,44 +201,113 @@ export default function ListingsTable({
       </div>
 
       {showFilters && (
-        <div className="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Search</label>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Search title or description"
-            />
+        <div className="mb-4 space-y-4">
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Filter by iPhone Model
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {uniqueModels.map(model => (
+                <button
+                  key={model}
+                  onClick={() => setSelectedModel(selectedModel === model ? null : model)}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedModel === model
+                      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {model}
+                  {selectedModel === model && (
+                    <XMarkIcon 
+                      className="ml-2 h-4 w-4" 
+                      aria-hidden="true"
+                    />
+                  )}
+                </button>
+              ))}
+              {selectedModel && (
+                <button
+                  onClick={() => setSelectedModel(null)}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Location</label>
-            <input
-              type="text"
-              value={filters.location}
-              onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder="Filter by location"
-            />
+
+          <div className="p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">
+              Filter by Storage Capacity
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              {uniqueStorages.map(storage => (
+                <button
+                  key={storage}
+                  onClick={() => setSelectedStorage(selectedStorage === storage ? null : storage)}
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedStorage === storage
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {storage} GB
+                  {selectedStorage === storage && (
+                    <XMarkIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+                  )}
+                </button>
+              ))}
+              {selectedStorage && (
+                <button
+                  onClick={() => setSelectedStorage(null)}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-gray-500 hover:text-gray-700"
+                >
+                  Clear filter
+                </button>
+              )}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Min Price (€)</label>
-            <input
-              type="number"
-              value={filters.priceMin}
-              onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Max Price (€)</label>
-            <input
-              type="number"
-              value={filters.priceMax}
-              onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Search</label>
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Search title or description"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Location</label>
+              <input
+                type="text"
+                value={filters.location}
+                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Filter by location"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Min Price (€)</label>
+              <input
+                type="number"
+                value={filters.priceMin}
+                onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Max Price (€)</label>
+              <input
+                type="number"
+                value={filters.priceMax}
+                onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              />
+            </div>
           </div>
         </div>
       )}
