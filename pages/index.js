@@ -41,9 +41,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-4xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow-lg p-6">
+    <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Logo className="mx-auto h-12 w-auto text-blue-600" />
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          KleinanzeigenGPT
+        </h2>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 space-y-6">
           <div className="text-center">
             <div className="flex items-center justify-center mb-6">
               <Logo className="w-12 h-12 text-blue-600" />
@@ -110,6 +117,24 @@ export default function Home() {
                 <span className="ml-2">- Get scraped data</span>
               </li>
             </ul>
+          </div>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+
+          <div>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Go to Dashboard
+            </button>
           </div>
         </div>
       </div>
