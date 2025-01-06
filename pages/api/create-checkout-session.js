@@ -2,28 +2,40 @@ import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// Add CORS headers
-const allowCors = fn => async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
+export const config = {
+  api: {
+    bodyParser: true, // Enable body parsing
+  },
+};
+
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
-  if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
-  }
-  return await fn(req, res)
-}
+  );
 
-async function createCheckoutSession(req, res) {
+  // Handle preflight request
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  // Verify request method
   if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+    console.log('Method not allowed:', req.method); // Debug log
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      method: req.method,
+      allowedMethods: ['POST']
+    });
   }
 
   try {
+    console.log('Creating checkout session...'); // Debug log
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -47,11 +59,13 @@ async function createCheckoutSession(req, res) {
       cancel_url: `${req.headers.origin}/pricing`,
     });
 
-    res.status(200).json({ sessionId: session.id });
+    console.log('Session created:', session.id); // Debug log
+    return res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error('Stripe error:', error);
-    res.status(500).json({ message: error.message });
+    return res.status(500).json({ 
+      error: 'Failed to create checkout session',
+      message: error.message 
+    });
   }
-}
-
-export default allowCors(createCheckoutSession); 
+} 

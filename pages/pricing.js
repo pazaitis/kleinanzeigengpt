@@ -60,37 +60,46 @@ export default function Pricing() {
   const handleProSubscription = async () => {
     try {
       setIsLoading(true)
+      console.log('Starting checkout process...'); // Debug log
       
-      // Create checkout session
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({}) // Add any additional data you need to send
-      })
+        credentials: 'same-origin', // Add this line
+        body: JSON.stringify({
+          // You can add any additional data here if needed
+        })
+      });
+
+      console.log('Response status:', response.status); // Debug log
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.message || 'Network response was not ok')
+        const errorData = await response.json();
+        console.error('Error response:', errorData); // Debug log
+        throw new Error(errorData.message || 'Failed to create checkout session');
       }
       
-      const { sessionId } = await response.json()
+      const { sessionId } = await response.json();
+      console.log('Session ID received:', sessionId); // Debug log
 
-      // Redirect to Stripe checkout
-      const stripe = await stripePromise
-      const { error } = await stripe.redirectToCheckout({ sessionId })
+      const stripe = await stripePromise;
+      const { error } = await stripe.redirectToCheckout({ sessionId });
       
-      if (error) throw error
+      if (error) {
+        console.error('Stripe redirect error:', error); // Debug log
+        throw error;
+      }
 
     } catch (error) {
-      console.error('Error:', error)
-      alert('Something went wrong. Please try again.')
+      console.error('Checkout error:', error);
+      alert('Failed to start checkout process. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-white">
