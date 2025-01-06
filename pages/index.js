@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import AuthModal from '../components/AuthModal'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import AnalysisProgress from '../components/AnalysisProgress'
 
 export default function Home() {
   const router = useRouter()
@@ -14,6 +15,10 @@ export default function Home() {
   const [showEmailAuth, setShowEmailAuth] = useState(false)
   const [exampleListings, setExampleListings] = useState([])
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisStep, setAnalysisStep] = useState(0)
+  const [listingUrl, setListingUrl] = useState('')
+  const [listingImage, setListingImage] = useState(null)
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -68,6 +73,49 @@ export default function Home() {
       },
     })
     if (error) console.error('Error logging in:', error.message)
+  }
+
+  const handleAnalyze = async () => {
+    if (!listingUrl) return
+    
+    setIsAnalyzing(true)
+    setAnalysisStep(1)
+    setListingImage(null)
+
+    try {
+      const response = await fetch('/api/fetch-listing-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: listingUrl }),
+      })
+
+      if (response.ok) {
+        const { imageUrl } = await response.json()
+        console.log('Fetched image URL:', imageUrl)
+        if (imageUrl) {
+          setListingImage(imageUrl)
+        }
+      }
+
+      for (let step = 1; step <= 4; step++) {
+        await new Promise(resolve => setTimeout(resolve, 3000))
+        setAnalysisStep(step)
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 1500))
+      
+      setIsAnalyzing(false)
+      setAnalysisStep(0)
+      setListingImage(null)
+      
+    } catch (error) {
+      console.error('Analysis failed:', error)
+      setIsAnalyzing(false)
+      setAnalysisStep(0)
+      setListingImage(null)
+    }
   }
 
   return (
@@ -216,25 +264,41 @@ export default function Home() {
                 <div className="flex-1">
                   <input
                     type="text"
+                    value={listingUrl}
+                    onChange={(e) => setListingUrl(e.target.value)}
                     placeholder="https://www.kleinanzeigen.de/s-anzeige/iphone-12-pro-128-gb/2968640621-173-3905"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-500"
+                    disabled={isAnalyzing}
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Paste the URL of any iPhone listing from Kleinanzeigen.de
                   </p>
                 </div>
                 <button 
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 h-[46px]"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || !listingUrl}
+                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SparklesIcon className="h-5 w-5" />
-                  <span>Analyze</span>
+                  <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
                 </button>
               </div>
+
+              {/* Analysis Progress Section */}
+              {isAnalyzing && (
+                <div className="w-full mt-8 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <AnalysisProgress 
+                    currentStep={analysisStep}
+                    isComplete={analysisStep === 4}
+                    listingImage={listingImage}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
           {/* Example Cards Section */}
-          <div className="mt-24">
+          <div className={`mt-${isAnalyzing ? '32' : '24'}`}>
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">
                 Recent Analysis Examples
