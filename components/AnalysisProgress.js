@@ -1,4 +1,6 @@
-import { SparklesIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import { SparklesIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import MapModal from './MapModal'
 
 const steps = [
   {
@@ -20,6 +22,8 @@ const steps = [
 ]
 
 export default function AnalysisProgress({ currentStep, isComplete, listingImage, listingDetails }) {
+  const [isMapOpen, setIsMapOpen] = useState(false)
+
   return (
     <div className="p-6">
       <div className="flex items-center justify-center mb-4">
@@ -29,13 +33,13 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
 
       {/* Listing Details Section */}
       {(listingImage || listingDetails) && (
-        <div className="mb-6 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+        <div className="mb-8 overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm">
           {listingImage && (
-            <div className="aspect-w-16 aspect-h-9">
+            <div className="relative h-64 bg-gray-50 border-b border-gray-200">
               <img 
                 src={listingImage} 
                 alt={listingDetails?.title || 'Listing'} 
-                className="w-full h-48 object-contain mx-auto bg-white"
+                className="w-full h-full object-contain p-4"
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = '/placeholder-image.png';
@@ -45,32 +49,46 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
           )}
           
           {listingDetails && (
-            <div className="p-4 space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {listingDetails.title}
-              </h3>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-green-600 font-medium text-lg">
-                  {listingDetails.price}
+            <div className="p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-900 leading-tight">
+                  {listingDetails.title}
+                </h3>
+                <span className="text-xs text-gray-500">
+                  ID: {listingDetails.articleId}
                 </span>
-                <span className="text-gray-500">
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-lg bg-green-50 text-green-700 font-medium text-lg">
+                    {listingDetails.price}
+                  </span>
+                </div>
+                <div className="flex items-center text-gray-500 text-sm">
+                  <svg className="h-4 w-4 mr-1" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                    <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   {listingDetails.date}
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsMapOpen(true)}
+                className="flex items-center text-gray-600 hover:text-blue-600 transition-colors group"
+              >
+                <MapPinIcon className="h-5 w-5 mr-2 group-hover:text-blue-600" />
+                <span className="text-sm font-medium group-hover:text-blue-600">
+                  {listingDetails.location}
                 </span>
-              </div>
-              <div className="flex items-center text-gray-600 text-sm">
-                <svg className="h-4 w-4 mr-1" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-                  <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {listingDetails.location}
-              </div>
+              </button>
             </div>
           )}
         </div>
       )}
 
       {/* Progress Steps */}
-      <div className="space-y-4">
+      <div className="space-y-4 bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         {steps.map((step) => (
           <div
             key={step.id}
@@ -104,6 +122,13 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
           </div>
         ))}
       </div>
+
+      {/* Map Modal */}
+      <MapModal
+        isOpen={isMapOpen}
+        onClose={() => setIsMapOpen(false)}
+        location={listingDetails?.location}
+      />
     </div>
   )
 } 

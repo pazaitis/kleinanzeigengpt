@@ -18,11 +18,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.2",
     "@faker-js/faker": "^8.0.2",
+    "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.21.0",
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.7",
+    "nanoid": "^5.0.9",
     "next": "^13.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -1,0 +1,1 @@
+export const URL_PREFIX = 'https://www.kleinanzeigen.de/' 

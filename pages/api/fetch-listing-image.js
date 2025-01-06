@@ -17,6 +17,10 @@ export default async function handler(req, res) {
 
     const html = await response.text()
 
+    // Extract article ID
+    const articleIdMatch = html.match(/id="viewad-ad-id-box"[^>]*>[\s\S]*?<li>(\d+)<\/li>/);
+    const articleId = articleIdMatch ? articleIdMatch[1] : '';
+
     // Extract image URL
     const imageMatch = html.match(/data-imgsrc="([^"]+)"/);
     let imageUrl = imageMatch ? imageMatch[1] : null;
@@ -46,6 +50,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       imageUrl,
       details: {
+        articleId,
         title,
         price,
         location,

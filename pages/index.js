@@ -9,6 +9,8 @@ import AuthModal from '../components/AuthModal'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import AnalysisProgress from '../components/AnalysisProgress'
 import AnalysisView from '../components/AnalysisView'
+import { URL_PREFIX } from '../utils/constants'
+import { nanoid } from 'nanoid'
 
 export default function Home() {
   const router = useRouter()
@@ -22,6 +24,7 @@ export default function Home() {
   const [listingImage, setListingImage] = useState(null)
   const [listingDetails, setListingDetails] = useState(null)
   const [showAnalysisView, setShowAnalysisView] = useState(false)
+  const [currentAnalysisId, setCurrentAnalysisId] = useState(null)
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -81,6 +84,9 @@ export default function Home() {
   const handleAnalyze = async () => {
     if (!listingUrl) return
     
+    const analysisId = nanoid(10)
+    setCurrentAnalysisId(analysisId)
+    
     setShowAnalysisView(true)
     setIsAnalyzing(true)
     setAnalysisStep(1)
@@ -88,22 +94,37 @@ export default function Home() {
     setListingDetails(null)
 
     try {
+      const { error } = await supabase
+        .from('analyses')
+        .insert({
+          id: analysisId,
+          listing_url: listingUrl,
+          user_id: user?.id,
+          status: 'processing',
+          created_at: new Date().toISOString()
+        })
+
+      if (error) throw error
+
       const response = await fetch('/api/fetch-listing-image', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: listingUrl }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: listingUrl, analysisId })
       })
 
       if (response.ok) {
         const { imageUrl, details } = await response.json()
-        if (imageUrl) {
-          setListingImage(imageUrl)
-        }
-        if (details) {
-          setListingDetails(details)
-        }
+        if (imageUrl) setListingImage(imageUrl)
+        if (details) setListingDetails(details)
+
+        await supabase
+          .from('analyses')
+          .update({
+            image_url: imageUrl,
+            details,
+            status: 'completed'
+          })
+          .eq('id', analysisId)
       }
 
       for (let step = 1; step <= 4; step++) {
@@ -111,26 +132,21 @@ export default function Home() {
         setAnalysisStep(step)
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
       setIsAnalyzing(false)
-      setAnalysisStep(0)
-      setListingImage(null)
-      setListingDetails(null)
       
     } catch (error) {
       console.error('Analysis failed:', error)
-      setIsAnalyzing(false)
-      setAnalysisStep(0)
-      setListingImage(null)
-      setListingDetails(null)
+      await supabase
+        .from('analyses')
+        .update({ status: 'failed' })
+        .eq('id', analysisId)
     }
   }
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="fixed w-full top-0 bg-white z-10 border-b">
+      <nav className="fixed w-full top-0 bg-white z-30 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -377,26 +393,33 @@ export default function Home() {
 
         {/* Analysis View */}
         {showAnalysisView && (
-          <AnalysisView
-            listingUrl={listingUrl}
-            setListingUrl={setListingUrl}
-            isAnalyzing={isAnalyzing}
-            handleAnalyze={handleAnalyze}
-            analysisStep={analysisStep}
-            listingImage={listingImage}
-            listingDetails={listingDetails}
-            onClose={() => {
-              setShowAnalysisView(false)
-              setIsAnalyzing(false)
-              setAnalysisStep(0)
-              setListingImage(null)
-              setListingDetails(null)
-            }}
-            user={user}
-            handleLogout={handleLogout}
-            router={router}
-            setShowEmailAuth={setShowEmailAuth}
-          />
+          <div className="relative">
+            <div 
+              className="fade-in fixed inset-0 bg-black bg-opacity-50 z-40"
+              onClick={() => {
+                setShowAnalysisView(false)
+              }}
+            />
+            <div className="slide-in fixed inset-0 bg-white z-50 overflow-y-auto">
+              <AnalysisView
+                listingUrl={listingUrl}
+                setListingUrl={setListingUrl}
+                isAnalyzing={isAnalyzing}
+                handleAnalyze={handleAnalyze}
+                analysisStep={analysisStep}
+                listingImage={listingImage}
+                listingDetails={listingDetails}
+                onClose={() => {
+                  setShowAnalysisView(false)
+                }}
+                user={user}
+                handleLogout={handleLogout}
+                router={router}
+                setShowEmailAuth={setShowEmailAuth}
+                analysisId={currentAnalysisId}
+              />
+            </div>
+          </div>
         )}
       </main>
 
