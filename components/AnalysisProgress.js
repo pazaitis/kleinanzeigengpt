@@ -35,16 +35,39 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
       {(listingImage || listingDetails) && (
         <div className="mb-8 overflow-hidden bg-white rounded-xl border border-gray-200 shadow-sm">
           {listingImage && (
-            <div className="relative h-64 bg-gray-50 border-b border-gray-200">
-              <img 
-                src={listingImage} 
-                alt={listingDetails?.title || 'Listing'} 
-                className="w-full h-full object-contain p-4"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = '/placeholder-image.png';
-                }}
-              />
+            <div className="relative h-64">
+              <a
+                href={`https://www.kleinanzeigen.de/s-anzeige/${listingDetails?.articleId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block relative group h-full"
+              >
+                <img
+                  src={listingImage}
+                  alt="Listing"
+                  className="w-full h-full object-contain p-4 transition-opacity group-hover:opacity-95"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = '/placeholder-image.png';
+                  }}
+                />
+                {/* Overlay with icon on hover */}
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black bg-opacity-20">
+                  <svg 
+                    className="h-8 w-8 text-white" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                    />
+                  </svg>
+                </div>
+              </a>
             </div>
           )}
           
