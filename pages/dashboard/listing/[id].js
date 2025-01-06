@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../supabase'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import Logo from '../../../components/Logo'
+import Link from 'next/link'
 
 export default function ListingAnalysis() {
   const router = useRouter()
@@ -60,7 +61,10 @@ export default function ListingAnalysis() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Logo className="w-8 h-8 text-blue-600" />
+              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+                <Logo className="w-8 h-8 text-blue-600" />
+                <span className="ml-2 text-xl font-semibold text-gray-900">KleinanzeigenGPT</span>
+              </Link>
               <div className="text-sm text-gray-500">
                 <button 
                   onClick={() => router.back()}

@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../supabase'
 import Logo from '../components/Logo'
 import ListingsTable from '../components/ListingsTable'
+import Link from 'next/link'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -83,8 +84,10 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Logo className="w-8 h-8 text-blue-600" />
-              <span className="ml-2 text-xl font-semibold text-gray-900">KleinanzeigenGPT</span>
+              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+                <Logo className="w-8 h-8 text-blue-600" />
+                <span className="ml-2 text-xl font-semibold text-gray-900">KleinanzeigenGPT</span>
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">{user?.email}</span>
