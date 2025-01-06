@@ -4,6 +4,7 @@ import { supabase } from '../../../supabase'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import Logo from '../../../components/Logo'
 import Link from 'next/link'
+import Navbar from '../../../components/Navbar'
 
 export default function ListingAnalysis() {
   const router = useRouter()
@@ -56,31 +57,9 @@ export default function ListingAnalysis() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <Logo className="w-8 h-8 text-blue-600" />
-                <span className="ml-2 text-xl font-semibold text-gray-900">KleinanzeigenGPT</span>
-              </Link>
-              <div className="text-sm text-gray-500">
-                <button 
-                  onClick={() => router.back()}
-                  className="hover:text-gray-700"
-                >
-                  All Listings
-                </button>
-                <span className="mx-2">›</span>
-                <span className="text-gray-900">Article {id}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white">
+      <Navbar user={user} />
+      <div className="pt-16">
         {listing && (
           <div className="bg-white shadow rounded-lg">
             {/* Add your detailed analysis UI here */}
@@ -175,7 +154,7 @@ export default function ListingAnalysis() {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   )
 } 
