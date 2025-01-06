@@ -18,7 +18,7 @@ export default async function handler(req, res) {
               name: 'KleinanzeigenGPT Pro',
               description: 'Monthly subscription to KleinanzeigenGPT Pro plan',
             },
-            unit_amount: 1900, // €19.00
+            unit_amount: 2000, // Changed from 1900 (€19.00) to 2000 (€20.00)
             recurring: {
               interval: 'month',
             },

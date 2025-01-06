@@ -31,7 +31,7 @@ const pricingPlans = [
   },
   {
     name: 'Pro',
-    price: '€19',
+    price: '€20',
     period: '/month',
     description: 'For power users who need more analyses',
     features: [
