@@ -260,7 +260,7 @@ export default function Home() {
               Track and analyze iPhone listings on Kleinanzeigen with advanced AI technology
             </p>
             <div className="flex flex-col items-center space-y-2 max-w-3xl mx-auto">
-              <div className="flex w-full space-x-4">
+              <div className="flex flex-col sm:flex-row w-full sm:space-x-4 space-y-4 sm:space-y-0">
                 <div className="flex-1">
                   <input
                     type="text"
@@ -277,7 +277,7 @@ export default function Home() {
                 <button 
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !listingUrl}
-                  className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="mx-auto w-48 sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center justify-center space-x-2 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SparklesIcon className="h-5 w-5" />
                   <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
