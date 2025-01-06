@@ -11,6 +11,7 @@ export default function Home() {
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [showEmailAuth, setShowEmailAuth] = useState(false)
+  const [exampleListings, setExampleListings] = useState([])
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -21,6 +22,30 @@ export default function Home() {
     })
 
     return () => subscription?.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    async function fetchExampleListings() {
+      const { data, error } = await supabase
+        .from('listings')
+        .select(`
+          *,
+          iphone_analysis (
+            iphone_model,
+            storage_gb,
+            rating
+          )
+        `)
+        .not('iphone_analysis', 'is', null)
+        .limit(3)
+        .order('last_seen', { ascending: false })
+
+      if (!error && data) {
+        setExampleListings(data)
+      }
+    }
+
+    fetchExampleListings()
   }, [])
 
   const handleLogout = async () => {
@@ -126,16 +151,65 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Example Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
-            {[1, 2, 3].map((card) => (
-              <div key={card} className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2">Card Example {card}</h3>
-                <p className="text-gray-600">
-                  Sample content showcasing the features and capabilities of our platform.
-                </p>
-              </div>
-            ))}
+          {/* Example Cards Section */}
+          <div className="mt-24">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Recent Analysis Examples
+              </h2>
+              <p className="text-gray-600">
+                See how our AI analyzes iPhone listings in real-time
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {exampleListings.map((listing) => (
+                <div key={listing.article_id} className="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                  <div className="flex justify-end mb-2">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <SparklesIcon className="h-3 w-3 mr-1" />
+                      AI Analyzed
+                    </span>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    {listing.thumbnail_url ? (
+                      <img
+                        src={listing.thumbnail_url}
+                        alt={listing.title}
+                        className="w-20 h-20 object-cover rounded-md flex-shrink-0"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 bg-gray-200 rounded-md flex items-center justify-center flex-shrink-0">
+                        <span className="text-gray-400 text-sm">No image</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                        {listing.title}
+                      </h3>
+                      <p className="mt-1 text-green-600 font-medium">{listing.price}</p>
+                    </div>
+                  </div>
+                  
+                  {listing.iphone_analysis && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-600">
+                          {listing.iphone_analysis.iphone_model}
+                        </span>
+                        <span className="text-gray-600">
+                          {listing.iphone_analysis.storage_gb}GB
+                        </span>
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                          Rating: {listing.iphone_analysis.rating}/5
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
