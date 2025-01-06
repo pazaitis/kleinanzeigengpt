@@ -65,6 +65,30 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
                     {listingDetails.price}
                   </span>
                 </div>
+                <a
+                  href={`https://www.kleinanzeigen.de/s-anzeige/${listingDetails.articleId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  <svg 
+                    className="h-4 w-4 mr-1" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                    />
+                  </svg>
+                  View Original
+                </a>
+              </div>
+
+              <div className="flex items-center justify-between">
                 <div className="flex items-center text-gray-500 text-sm">
                   <svg className="h-4 w-4 mr-1" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
                     <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

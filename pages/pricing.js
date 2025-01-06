@@ -3,6 +3,11 @@ import Link from 'next/link'
 import Logo from '../components/Logo'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import Navbar from '../components/Navbar'
+import { loadStripe } from '@stripe/stripe-js'
+import { useState } from 'react'
+
+// Initialize Stripe
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 const pricingPlans = [
   {
@@ -15,9 +20,14 @@ const pricingPlans = [
       'Basic AI insights',
       'Single listing analysis',
       'Email support',
+      'Price history tracking',
     ],
     buttonText: 'Get Started',
     buttonStyle: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50',
+    handleClick: () => {
+      // Handle free plan signup
+      router.push('/dashboard')
+    }
   },
   {
     name: 'Pro',
@@ -25,38 +35,58 @@ const pricingPlans = [
     period: '/month',
     description: 'For power users who need more analyses',
     features: [
-      '50 analyses per month',
+      'Unlimited analyses',
       'Advanced AI insights',
       'Bulk listing analysis',
       'Price history tracking',
       'Priority email support',
       'Market trend analysis',
+      'API access',
+      'Custom alerts',
     ],
     buttonText: 'Start Pro Trial',
     buttonStyle: 'bg-blue-600 text-white hover:bg-blue-700',
     popular: true,
-  },
-  {
-    name: 'Business',
-    price: '€49',
-    period: '/month',
-    description: 'For businesses requiring full access',
-    features: [
-      'Unlimited analyses',
-      'Premium AI insights',
-      'Bulk listing analysis',
-      'Price history tracking',
-      'Priority 24/7 support',
-      'Market trend analysis',
-      'Custom API access',
-      'Team collaboration',
-    ],
-    buttonText: 'Contact Sales',
-    buttonStyle: 'bg-gray-900 text-white hover:bg-gray-800',
-  },
+    handleClick: async () => {
+      // Will be defined in the component
+    }
+  }
 ]
 
 export default function Pricing() {
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleProSubscription = async () => {
+    try {
+      setIsLoading(true)
+      
+      // Create checkout session
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+
+      if (!response.ok) throw new Error('Network response was not ok')
+      
+      const { sessionId } = await response.json()
+
+      // Redirect to Stripe checkout
+      const stripe = await stripePromise
+      const { error } = await stripe.redirectToCheckout({ sessionId })
+      
+      if (error) throw error
+
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Something went wrong. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -72,7 +102,7 @@ export default function Pricing() {
             </p>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {pricingPlans.map((plan) => (
               <div
                 key={plan.name}
@@ -103,9 +133,23 @@ export default function Pricing() {
                   </ul>
 
                   <button
-                    className={`mt-8 w-full py-3 px-4 rounded-lg font-medium transition-colors ${plan.buttonStyle}`}
+                    onClick={plan.name === 'Pro' ? handleProSubscription : plan.handleClick}
+                    disabled={isLoading && plan.name === 'Pro'}
+                    className={`mt-8 w-full py-3 px-4 rounded-lg font-medium transition-colors ${
+                      plan.buttonStyle
+                    } ${isLoading && plan.name === 'Pro' ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
-                    {plan.buttonText}
+                    {isLoading && plan.name === 'Pro' ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      plan.buttonText
+                    )}
                   </button>
                 </div>
               </div>

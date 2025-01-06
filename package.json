@@ -20,6 +20,7 @@
     "@faker-js/faker": "^8.0.2",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
+    "@stripe/stripe-js": "^5.4.0",
     "@supabase/supabase-js": "^2.21.0",
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
@@ -28,7 +29,8 @@
     "next": "^13.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "stripe": "^17.5.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
