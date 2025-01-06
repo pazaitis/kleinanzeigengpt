@@ -59,8 +59,8 @@ export default function Pricing() {
 
   const handleProSubscription = async () => {
     try {
-      setIsLoading(true)
-      console.log('Starting checkout process...'); // Debug log
+      setIsLoading(true);
+      console.log('Starting checkout process...');
       
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
@@ -68,34 +68,48 @@ export default function Pricing() {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        credentials: 'same-origin', // Add this line
-        body: JSON.stringify({
-          // You can add any additional data here if needed
-        })
+        body: JSON.stringify({}) // Empty object as body
       });
 
-      console.log('Response status:', response.status); // Debug log
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData); // Debug log
-        throw new Error(errorData.message || 'Failed to create checkout session');
-      }
+      console.log('Response status:', response.status);
       
-      const { sessionId } = await response.json();
-      console.log('Session ID received:', sessionId); // Debug log
+      // Get the full response text for debugging
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
 
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse response:', e);
+        throw new Error('Invalid response from server');
+      }
+
+      if (!data.sessionId) {
+        console.error('No sessionId in response:', data);
+        throw new Error('No session ID received');
+      }
+
+      console.log('Session ID received:', data.sessionId);
+
+      // Initialize Stripe
       const stripe = await stripePromise;
-      const { error } = await stripe.redirectToCheckout({ sessionId });
+      if (!stripe) {
+        throw new Error('Failed to initialize Stripe');
+      }
+
+      const { error } = await stripe.redirectToCheckout({
+        sessionId: data.sessionId
+      });
       
       if (error) {
-        console.error('Stripe redirect error:', error); // Debug log
+        console.error('Stripe redirect error:', error);
         throw error;
       }
 
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Failed to start checkout process. Please try again.');
+      alert(error.message || 'Failed to start checkout process. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -1,14 +1,28 @@
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Add error handling for missing API key
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2023-10-16' // Add explicit API version
+});
 
 export const config = {
   api: {
-    bodyParser: true, // Enable body parsing
+    bodyParser: true,
   },
 };
 
 export default async function handler(req, res) {
+  // Debug log for environment variables
+  console.log('Environment check:', {
+    hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
+    keyLength: process.env.STRIPE_SECRET_KEY?.length,
+    nodeEnv: process.env.NODE_ENV
+  });
+
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,15 +32,12 @@ export default async function handler(req, res) {
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // Handle preflight request
   if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
+    return res.status(200).end();
   }
 
-  // Verify request method
   if (req.method !== 'POST') {
-    console.log('Method not allowed:', req.method); // Debug log
+    console.log('Method not allowed:', req.method);
     return res.status(405).json({ 
       error: 'Method not allowed',
       method: req.method,
@@ -35,7 +46,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Creating checkout session...'); // Debug log
+    console.log('Creating checkout session...');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -59,13 +70,24 @@ export default async function handler(req, res) {
       cancel_url: `${req.headers.origin}/pricing`,
     });
 
-    console.log('Session created:', session.id); // Debug log
-    return res.status(200).json({ sessionId: session.id });
+    console.log('Session created:', session.id);
+    
+    // Ensure we're sending a properly formatted JSON response
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(200).json({
+      sessionId: session.id,
+      success: true
+    });
+
   } catch (error) {
     console.error('Stripe error:', error);
+    // Ensure we're sending a properly formatted error response
+    res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ 
       error: 'Failed to create checkout session',
-      message: error.message 
+      message: error.message,
+      success: false,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 } 
