@@ -19,7 +19,7 @@ const steps = [
   },
 ]
 
-export default function AnalysisProgress({ currentStep, isComplete, listingImage }) {
+export default function AnalysisProgress({ currentStep, isComplete, listingImage, listingDetails }) {
   return (
     <div className="p-6">
       <div className="flex items-center justify-center mb-4">
@@ -27,20 +27,49 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
         <span className="ml-2 text-lg font-semibold">AI Analysis in Progress</span>
       </div>
 
-      {listingImage && (
-        <div className="mb-6 rounded-lg overflow-hidden bg-gray-100">
-          <img 
-            src={listingImage} 
-            alt="Listing" 
-            className="w-full h-48 object-contain mx-auto"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = '/placeholder-image.png'; // Add a placeholder image if needed
-            }}
-          />
+      {/* Listing Details Section */}
+      {(listingImage || listingDetails) && (
+        <div className="mb-6 bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+          {listingImage && (
+            <div className="aspect-w-16 aspect-h-9">
+              <img 
+                src={listingImage} 
+                alt={listingDetails?.title || 'Listing'} 
+                className="w-full h-48 object-contain mx-auto bg-white"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = '/placeholder-image.png';
+                }}
+              />
+            </div>
+          )}
+          
+          {listingDetails && (
+            <div className="p-4 space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {listingDetails.title}
+              </h3>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-green-600 font-medium text-lg">
+                  {listingDetails.price}
+                </span>
+                <span className="text-gray-500">
+                  {listingDetails.date}
+                </span>
+              </div>
+              <div className="flex items-center text-gray-600 text-sm">
+                <svg className="h-4 w-4 mr-1" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+                  <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {listingDetails.location}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
+      {/* Progress Steps */}
       <div className="space-y-4">
         {steps.map((step) => (
           <div

@@ -8,6 +8,7 @@ import { SparklesIcon } from '@heroicons/react/24/outline'
 import AuthModal from '../components/AuthModal'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import AnalysisProgress from '../components/AnalysisProgress'
+import AnalysisView from '../components/AnalysisView'
 
 export default function Home() {
   const router = useRouter()
@@ -19,6 +20,8 @@ export default function Home() {
   const [analysisStep, setAnalysisStep] = useState(0)
   const [listingUrl, setListingUrl] = useState('')
   const [listingImage, setListingImage] = useState(null)
+  const [listingDetails, setListingDetails] = useState(null)
+  const [showAnalysisView, setShowAnalysisView] = useState(false)
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -78,9 +81,11 @@ export default function Home() {
   const handleAnalyze = async () => {
     if (!listingUrl) return
     
+    setShowAnalysisView(true)
     setIsAnalyzing(true)
     setAnalysisStep(1)
     setListingImage(null)
+    setListingDetails(null)
 
     try {
       const response = await fetch('/api/fetch-listing-image', {
@@ -92,10 +97,12 @@ export default function Home() {
       })
 
       if (response.ok) {
-        const { imageUrl } = await response.json()
-        console.log('Fetched image URL:', imageUrl)
+        const { imageUrl, details } = await response.json()
         if (imageUrl) {
           setListingImage(imageUrl)
+        }
+        if (details) {
+          setListingDetails(details)
         }
       }
 
@@ -109,12 +116,14 @@ export default function Home() {
       setIsAnalyzing(false)
       setAnalysisStep(0)
       setListingImage(null)
+      setListingDetails(null)
       
     } catch (error) {
       console.error('Analysis failed:', error)
       setIsAnalyzing(false)
       setAnalysisStep(0)
       setListingImage(null)
+      setListingDetails(null)
     }
   }
 
@@ -291,6 +300,7 @@ export default function Home() {
                     currentStep={analysisStep}
                     isComplete={analysisStep === 4}
                     listingImage={listingImage}
+                    listingDetails={listingDetails}
                   />
                 </div>
               )}
@@ -364,6 +374,30 @@ export default function Home() {
           isOpen={showEmailAuth}
           onClose={() => setShowEmailAuth(false)}
         />
+
+        {/* Analysis View */}
+        {showAnalysisView && (
+          <AnalysisView
+            listingUrl={listingUrl}
+            setListingUrl={setListingUrl}
+            isAnalyzing={isAnalyzing}
+            handleAnalyze={handleAnalyze}
+            analysisStep={analysisStep}
+            listingImage={listingImage}
+            listingDetails={listingDetails}
+            onClose={() => {
+              setShowAnalysisView(false)
+              setIsAnalyzing(false)
+              setAnalysisStep(0)
+              setListingImage(null)
+              setListingDetails(null)
+            }}
+            user={user}
+            handleLogout={handleLogout}
+            router={router}
+            setShowEmailAuth={setShowEmailAuth}
+          />
+        )}
       </main>
 
       {/* Features Section */}
