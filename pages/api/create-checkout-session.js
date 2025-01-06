@@ -57,7 +57,7 @@ export default async function handler(req, res) {
   try {
     console.log('Creating checkout session...');
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal'],
+      payment_method_types: ['card'],
       line_items: [
         {
           price_data: {
@@ -77,13 +77,6 @@ export default async function handler(req, res) {
       mode: 'subscription',
       success_url: `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/pricing`,
-      payment_method_options: {
-        paypal: {
-          setup_future_usage: 'on_session',
-        },
-      },
-      billing_address_collection: 'required',
-      customer_email: req.body.email,
     });
 
     console.log('Session created:', session.id);
