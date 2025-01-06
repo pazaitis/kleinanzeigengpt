@@ -1,12 +1,20 @@
 import Stripe from 'stripe';
 
-// Add error handling for missing API key
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+// More explicit error checking for the API key
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+console.log('API Key check:', {
+  exists: !!stripeSecretKey,
+  length: stripeSecretKey?.length,
+  firstChars: stripeSecretKey?.substring(0, 7)
+});
+
+if (!stripeSecretKey || typeof stripeSecretKey !== 'string') {
+  throw new Error(`Invalid Stripe API key: ${typeof stripeSecretKey}`);
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16' // Add explicit API version
+// Initialize Stripe with explicit string type
+const stripe = new Stripe(String(stripeSecretKey), {
+  apiVersion: '2023-10-16'
 });
 
 export const config = {
@@ -16,11 +24,12 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  // Debug log for environment variables
-  console.log('Environment check:', {
+  // Debug log for environment check
+  console.log('Full environment check:', {
     hasStripeKey: !!process.env.STRIPE_SECRET_KEY,
     keyLength: process.env.STRIPE_SECRET_KEY?.length,
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
+    stripeInstance: !!stripe
   });
 
   // Set CORS headers
