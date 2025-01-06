@@ -66,10 +66,15 @@ export default function Pricing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        body: JSON.stringify({}) // Add any additional data you need to send
       })
 
-      if (!response.ok) throw new Error('Network response was not ok')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Network response was not ok')
+      }
       
       const { sessionId } = await response.json()
 
