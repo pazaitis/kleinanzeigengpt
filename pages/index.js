@@ -143,6 +143,13 @@ export default function Home() {
     }
   }
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAnalyze();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
@@ -289,10 +296,11 @@ export default function Home() {
                 <div className="flex-1">
                   <input
                     type="text"
+                    placeholder="Paste Kleinanzeigen URL here..."
+                    className="w-full px-4 py-3 text-lg border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={listingUrl}
                     onChange={(e) => setListingUrl(e.target.value)}
-                    placeholder="https://www.kleinanzeigen.de/s-anzeige/iphone-12-pro-128-gb/2968640621-173-3905"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-gray-500"
+                    onKeyDown={handleKeyDown}
                     disabled={isAnalyzing}
                   />
                   <p className="mt-1 text-xs text-gray-500">

@@ -27,4 +27,14 @@
 
 .fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Add these styles to hide scrollbars while keeping functionality */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 } 
