@@ -11,6 +11,7 @@ import AnalysisProgress from '../components/AnalysisProgress'
 import AnalysisView from '../components/AnalysisView'
 import { URL_PREFIX } from '../utils/constants'
 import { nanoid } from 'nanoid'
+import { ChartBarIcon, ShieldCheckIcon, PhotoIcon, DocumentMagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 export default function Home() {
   const router = useRouter()
@@ -25,6 +26,8 @@ export default function Home() {
   const [listingDetails, setListingDetails] = useState(null)
   const [showAnalysisView, setShowAnalysisView] = useState(false)
   const [currentAnalysisId, setCurrentAnalysisId] = useState(null)
+  const [isInputFocused, setIsInputFocused] = useState(false)
+  const [isRandomLoading, setIsRandomLoading] = useState(false)
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -127,7 +130,7 @@ export default function Home() {
           .eq('id', analysisId)
       }
 
-      for (let step = 1; step <= 4; step++) {
+      for (let step = 1; step <= 5; step++) {
         await new Promise(resolve => setTimeout(resolve, 3000))
         setAnalysisStep(step)
       }
@@ -147,6 +150,28 @@ export default function Home() {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAnalyze();
+    }
+  };
+
+  const handleRandomAnalysis = async () => {
+    try {
+      setIsRandomLoading(true)
+      const response = await fetch('/api/get-random-listing')
+      if (response.ok) {
+        const { url } = await response.json()
+        if (url !== listingUrl) {
+          await new Promise(resolve => setTimeout(resolve, 1500))
+          setListingUrl(url)
+        } else {
+          handleRandomAnalysis()
+        }
+      } else {
+        console.error('Failed to get random listing')
+      }
+    } catch (error) {
+      console.error('Error getting random listing:', error)
+    } finally {
+      setIsRandomLoading(false)
     }
   };
 
@@ -294,23 +319,91 @@ export default function Home() {
             <div className="flex flex-col items-center space-y-2 max-w-3xl mx-auto">
               <div className="flex flex-col sm:flex-row w-full sm:space-x-4 space-y-4 sm:space-y-0">
                 <div className="flex-1">
-                  <input
-                    type="text"
-                    placeholder="Paste Kleinanzeigen URL here..."
-                    className="w-full px-4 py-3 text-lg border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    value={listingUrl}
-                    onChange={(e) => setListingUrl(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isAnalyzing}
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Paste the URL of any iPhone listing from Kleinanzeigen.de
+                  <div className="relative flex items-center max-w-[800px]">
+                    <textarea
+                      placeholder="Paste Kleinanzeigen URL here..."
+                      className="w-full min-h-[48px] px-4 py-3 text-lg border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 overflow-hidden"
+                      value={listingUrl}
+                      onChange={(e) => {
+                        setListingUrl(e.target.value);
+                        if (isInputFocused) {
+                          const newHeight = e.target.scrollHeight;
+                          e.target.style.height = '48px';
+                          e.target.style.height = newHeight + 'px';
+                          // Update divider and button height
+                          const divider = e.target.nextElementSibling;
+                          const button = divider.nextElementSibling;
+                          divider.style.height = `${newHeight}px`;
+                          button.style.height = `${newHeight}px`;
+                        }
+                      }}
+                      onKeyDown={handleKeyDown}
+                      disabled={isAnalyzing || isRandomLoading}
+                      rows="1"
+                      style={{
+                        height: '48px',
+                        lineHeight: '24px',
+                        whiteSpace: isInputFocused ? 'pre-wrap' : 'nowrap',
+                        overflow: isInputFocused ? 'hidden' : 'ellipsis',
+                        textOverflow: 'ellipsis'
+                      }}
+                      onFocus={(e) => {
+                        setIsInputFocused(true);
+                        e.target.style.whiteSpace = 'pre-wrap';
+                        e.target.style.overflow = 'hidden';
+                        const newHeight = e.target.scrollHeight;
+                        e.target.style.height = newHeight + 'px';
+                        // Update divider and button height
+                        const divider = e.target.nextElementSibling;
+                        const button = divider.nextElementSibling;
+                        divider.style.height = `${newHeight}px`;
+                        button.style.height = `${newHeight}px`;
+                      }}
+                      onBlur={(e) => {
+                        setIsInputFocused(false);
+                        e.target.style.whiteSpace = 'nowrap';
+                        e.target.style.overflow = 'hidden';
+                        e.target.style.height = '48px';
+                        // Reset divider and button height
+                        const divider = e.target.nextElementSibling;
+                        const button = divider.nextElementSibling;
+                        divider.style.height = '48px';
+                        button.style.height = '48px';
+                      }}
+                    />
+                    <div className="flex items-center transition-all duration-200" style={{ height: '48px' }}>
+                      <div className="h-full w-px bg-gray-300"></div>
+                    </div>
+                    <button
+                      onClick={handleRandomAnalysis}
+                      disabled={isAnalyzing || isRandomLoading}
+                      className="px-4 bg-white border-t border-r border-b border-gray-300 rounded-r-lg hover:bg-gray-50 transition-all duration-200 inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ height: '48px' }}
+                      title="Try a random listing"
+                    >
+                      <svg 
+                        className={`h-5 w-5 text-gray-500 ${isRandomLoading ? 'animate-spin' : ''}`} 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                      >
+                        <path 
+                          strokeLinecap="round" 
+                          strokeLinejoin="round" 
+                          strokeWidth={2} 
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" 
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500">
+                    Paste the URL of any iPhone listing from kleinanzeigen.de or try with random iPhone
                   </p>
                 </div>
                 <button 
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !listingUrl}
-                  className="mx-auto w-48 sm:w-auto bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center justify-center space-x-2 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="h-12 bg-blue-600 text-white px-8 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SparklesIcon className="h-5 w-5" />
                   <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
@@ -328,6 +421,104 @@ export default function Home() {
                   />
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Sales Funnel Section */}
+          <div className="mt-32 max-w-7xl mx-auto">
+            {/* Value Proposition */}
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">
+                Make Smarter iPhone Buying Decisions
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Our AI-powered analysis helps you spot great deals and avoid overpriced listings
+              </p>
+            </div>
+
+            {/* Feature Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                  <ChartBarIcon className="h-6 w-6 text-blue-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Price Analysis</h3>
+                <p className="text-gray-600">
+                  Get instant market comparisons and know if you're getting a fair deal
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                  <ShieldCheckIcon className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Scam Protection</h3>
+                <p className="text-gray-600">
+                  AI-powered detection of suspicious listings and common scam patterns
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                  <PhotoIcon className="h-6 w-6 text-purple-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Image Analysis</h3>
+                <p className="text-gray-600">
+                  Verify iPhone condition and authenticity through advanced image recognition
+                </p>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+                  <DocumentMagnifyingGlassIcon className="h-6 w-6 text-yellow-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Deal Classification</h3>
+                <p className="text-gray-600">
+                  Smart analysis of listing details to categorize deals as Great, Fair, or Overpriced
+                </p>
+              </div>
+            </div>
+
+            {/* Social Proof */}
+            <div className="bg-gray-50 rounded-2xl p-8 mb-16">
+              <div className="text-center mb-8">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Trusted by iPhone Buyers
+                </h3>
+                <div className="flex justify-center items-center space-x-8">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-1">1,000+</div>
+                    <div className="text-sm text-gray-600">Listings Analyzed</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-1">€250</div>
+                    <div className="text-sm text-gray-600">Avg. Savings</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-1">98%</div>
+                    <div className="text-sm text-gray-600">Accuracy Rate</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div className="text-center bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-12 text-white">
+              <h2 className="text-3xl font-bold mb-4">
+                Start Making Smarter iPhone Purchases Today
+              </h2>
+              <p className="text-xl mb-8 opacity-90">
+                Join thousands of smart buyers who trust our AI to find the best iPhone deals
+              </p>
+              <button
+                onClick={() => setShowEmailAuth(true)}
+                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
+                Create Free Account
+              </button>
+              <p className="mt-4 text-sm opacity-75">
+                No credit card required • Free analysis credits included
+              </p>
             </div>
           </div>
 

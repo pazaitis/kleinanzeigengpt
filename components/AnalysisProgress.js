@@ -17,6 +17,10 @@ const steps = [
   },
   {
     id: 4,
+    title: 'Checking for potential red flags...',
+  },
+  {
+    id: 5,
     title: 'Summarizing result...',
   },
 ]
@@ -25,6 +29,7 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
   const [isMapOpen, setIsMapOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const thumbnailsRef = useRef(null)
+  const [claudeAnalysis, setClaudeAnalysis] = useState(null)
   
   // Use the fetched images or fallback to single listingImage
   const images = listingDetails?.images || (listingImage ? [listingImage] : [])
@@ -64,6 +69,34 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
       }
     }
   }, [currentImageIndex, images.length]);
+
+  // Add useEffect to trigger Claude analysis when listing details are available
+  useEffect(() => {
+    async function analyzeWithClaude() {
+      if (listingDetails && currentStep === 4) {
+        try {
+          const response = await fetch('/api/analyze-listing-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: listingDetails.title,
+              description: listingDetails.description,
+              sellerInfo: listingDetails.seller_info || 'Not available'
+            })
+          });
+
+          if (response.ok) {
+            const { analysis } = await response.json();
+            setClaudeAnalysis(analysis);
+          }
+        } catch (error) {
+          console.error('Error getting Claude analysis:', error);
+        }
+      }
+    }
+
+    analyzeWithClaude();
+  }, [listingDetails, currentStep]);
 
   return (
     <div className="flex h-full bg-gray-50">
@@ -274,6 +307,18 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Zusätzliche Informationen</h2>
               <div className="text-sm text-gray-600">
                 {listingDetails.additional_info}
+              </div>
+            </div>
+          )}
+
+          {/* Claude Analysis Section */}
+          {currentStep >= 4 && claudeAnalysis && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Listing Analysis Results
+              </h3>
+              <div className="prose prose-sm max-w-none text-gray-600">
+                {claudeAnalysis}
               </div>
             </div>
           )}
