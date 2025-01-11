@@ -28,6 +28,8 @@ export default function Home() {
   const [currentAnalysisId, setCurrentAnalysisId] = useState(null)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [isRandomLoading, setIsRandomLoading] = useState(false)
+  const [lastAnalysisTime, setLastAnalysisTime] = useState(null)
+  const COOLDOWN_PERIOD = 60000 // 60 seconds in milliseconds
 
   useEffect(() => {
     const session = supabase.auth.getSession()
@@ -84,11 +86,20 @@ export default function Home() {
     if (error) console.error('Error logging in:', error.message)
   }
 
+  const isAnalyzeDisabled = () => {
+    if (isAnalyzing || !listingUrl) return true
+    if (!lastAnalysisTime) return false
+    
+    const timeSinceLastAnalysis = Date.now() - lastAnalysisTime
+    return timeSinceLastAnalysis < COOLDOWN_PERIOD
+  }
+
   const handleAnalyze = async () => {
-    if (!listingUrl) return
+    if (isAnalyzeDisabled()) return
     
     const analysisId = nanoid(10)
     setCurrentAnalysisId(analysisId)
+    setLastAnalysisTime(Date.now())
     
     setShowAnalysisView(true)
     setIsAnalyzing(true)
@@ -402,11 +413,16 @@ export default function Home() {
                 </div>
                 <button 
                   onClick={handleAnalyze}
-                  disabled={isAnalyzing || !listingUrl}
+                  disabled={isAnalyzeDisabled()}
                   className="h-12 bg-blue-600 text-white px-8 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <SparklesIcon className="h-5 w-5" />
-                  <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
+                  <span>
+                    {isAnalyzing ? 'Analyzing...' : 
+                     isAnalyzeDisabled() && lastAnalysisTime ? 
+                     `Wait ${Math.ceil((COOLDOWN_PERIOD - (Date.now() - lastAnalysisTime)) / 1000)}s` : 
+                     'Analyze'}
+                  </span>
                 </button>
               </div>
 
@@ -458,13 +474,18 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative">
+                <div className="absolute -top-3 right-3">
+                  <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs px-3 py-1 rounded-full font-medium">
+                    Pro
+                  </span>
+                </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <PhotoIcon className="h-6 w-6 text-purple-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Image Analysis</h3>
                 <p className="text-gray-600">
-                  Verify iPhone condition and authenticity through advanced image recognition
+                  Verify iPhone condition and authenticity through advanced image recognition. Exclusive for Pro users.
                 </p>
               </div>
 

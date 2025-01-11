@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { SparklesIcon } from '@heroicons/react/24/outline'
 import AnalysisProgress from './AnalysisProgress'
 import Link from 'next/link'
 import Logo from './Logo'
 import { URL_PREFIX } from '../utils/constants'
 import { nanoid } from 'nanoid'
+import ShareButton from './ShareButton'
 
 export default function AnalysisView({ 
   listingUrl, 
@@ -40,6 +41,21 @@ export default function AnalysisView({
     return nanoid(10) // Generates a unique 10-character ID
   }
 
+  const shareUrl = `${window.location.origin}/analysis/${analysisId}`;
+
+  // Add originalUrl state to track the initially analyzed URL
+  const [originalUrl, setOriginalUrl] = useState(listingUrl);
+
+  useEffect(() => {
+    // Set the original URL when analysis view opens
+    setOriginalUrl(listingUrl);
+  }, []);
+
+  // Function to check if analyze should be enabled
+  const canAnalyze = () => {
+    return listingUrl !== originalUrl && listingUrl.trim() !== '';
+  };
+
   return (
     <>
       {/* Overlay with fade-in */}
@@ -72,37 +88,24 @@ export default function AnalysisView({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              <div className="flex-1">
-                <div className="relative flex items-center w-full">
-                  <div className="absolute inset-y-0 left-0 flex items-center px-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-500 text-sm select-none">
-                    {URL_PREFIX}
-                  </div>
-                  <input
-                    type="text"
-                    value={listingUrl.replace(URL_PREFIX, '')}
-                    onChange={(e) => {
-                      const newValue = e.target.value
-                      setListingUrl(newValue.startsWith(URL_PREFIX) 
-                        ? newValue 
-                        : URL_PREFIX + newValue
-                      )
-                    }}
-                    placeholder="s-anzeige/iphone-12-pro-128-gb/..."
-                    className="w-full pl-[230px] pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    disabled={isAnalyzing}
-                  />
-                </div>
+              <div className="flex-1 flex items-center space-x-4">
+                <input
+                  type="text"
+                  value={listingUrl}
+                  onChange={(e) => setListingUrl(e.target.value)}
+                  className="w-full h-10 px-4 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter Kleinanzeigen URL"
+                  disabled={isAnalyzing}
+                />
+                <button
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || !canAnalyze()}
+                  className="h-10 bg-blue-600 text-white px-6 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <SparklesIcon className="h-5 w-5" />
+                  <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
+                </button>
               </div>
-
-              {/* Action Buttons */}
-              <button 
-                onClick={handleAnalyze}
-                disabled={isAnalyzing || !listingUrl}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <SparklesIcon className="h-5 w-5" />
-                <span>{isAnalyzing ? 'Analyzing...' : 'Analyze'}</span>
-              </button>
 
               {/* User Settings */}
               <div className="flex items-center">
@@ -139,37 +142,16 @@ export default function AnalysisView({
                 )}
               </div>
 
-              {!isAnalyzing && analysisId && (
-                <button
-                  onClick={() => {
-                    const url = `${window.location.origin}/analysis/${analysisId}`
-                    navigator.clipboard.writeText(url)
-                    // Optionally show a toast notification that URL was copied
-                  }}
-                  className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center"
-                  title="Share Analysis"
-                >
-                  <svg 
-                    className="h-5 w-5 text-gray-600" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" 
-                    />
-                  </svg>
-                </button>
-              )}
+              <ShareButton 
+                url={shareUrl} 
+                listingDetails={listingDetails}
+              />
             </div>
           </div>
         </div>
 
         {/* Analysis Content */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="w-full px-4 py-8">
           <AnalysisProgress 
             currentStep={analysisStep}
             isComplete={analysisStep === 4}

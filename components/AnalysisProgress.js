@@ -100,8 +100,8 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
 
   return (
     <div className="flex h-full bg-gray-50">
-      {/* Left side: Kleinanzeigen replica */}
-      <div className="w-1/2 bg-white shadow-lg overflow-y-auto">
+      {/* Left side: Kleinanzeigen replica - now 1/3 width */}
+      <div className="w-1/3 bg-white shadow-lg overflow-y-auto">
         {/* Title and Price Section - Moved above gallery */}
         <div className="bg-white p-6 border-b">
           <div className="space-y-4">
@@ -325,9 +325,9 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
         </div>
       </div>
 
-      {/* Right side: Analysis */}
-      <div className="w-1/2 p-8 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
+      {/* Right side: Analysis - now 2/3 width */}
+      <div className="w-2/3 p-8 overflow-y-auto">
+        <div className="max-w-none mx-auto">
           <div className="flex items-center justify-center mb-8 p-4 bg-blue-50 rounded-xl">
             <SparklesIcon className="h-6 w-6 text-blue-600 animate-pulse" />
             <span className="ml-2 text-lg font-semibold text-blue-900">AI Analysis in Progress</span>
