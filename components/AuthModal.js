@@ -1,5 +1,5 @@
-import AuthForm from './AuthForm'
 import { supabase } from '../supabase'
+import AuthForm from './AuthForm'
 
 export default function AuthModal({ isOpen, onClose }) {
   const handleGoogleLogin = async () => {
@@ -23,7 +23,7 @@ export default function AuthModal({ isOpen, onClose }) {
       <div className="bg-white p-6 rounded-lg max-w-md w-full">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Login / Sign Up</h2>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
           >
@@ -52,7 +52,7 @@ export default function AuthModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        <AuthForm />
+        <AuthForm onClose={onClose} />
       </div>
     </div>
   )
