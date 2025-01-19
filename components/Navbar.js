@@ -25,13 +25,13 @@ export default function Navbar({ user }) {
 
   return (
     <>
-      <nav className="fixed w-full top-0 bg-white z-10 border-b">
+      <nav className="fixed w-full top-0 bg-white z-30 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-                <Logo className="h-8 w-8 text-blue-600" />
-                <span className="ml-2 text-xl font-semibold">KleinanzeigenGPT</span>
+                <Logo className="h-8 w-8 text-[#635bff]" />
+                <span className="ml-2 text-xl font-semibold text-[#0a2540]">KleinanzeigenGPT</span>
               </Link>
             </div>
 
@@ -78,9 +78,9 @@ export default function Navbar({ user }) {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors"
+                  className="bg-[#635bff] text-white px-6 py-2 rounded-full hover:bg-[#0a2540] transition-colors"
                 >
-                  Login / Sign-Up
+                  Get Started
                 </button>
               )}
             </div>
@@ -130,7 +130,7 @@ export default function Navbar({ user }) {
                   }}
                   className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 >
-                  Login / Sign-Up
+                  Get Started
                 </button>
               )}
             </div>

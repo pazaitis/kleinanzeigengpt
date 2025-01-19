@@ -371,14 +371,14 @@ export default function Home() {
       </nav>
 
       {/* Hero Section mit URL Input */}
-      <section className="relative bg-white pt-24 pb-16">
+      <section className="relative bg-gradient-to-b from-[#635bff]/[0.15] via-[#635bff]/[0.05] to-white pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+            <h1 className="text-4xl tracking-tight font-extrabold text-[#0a2540] sm:text-5xl md:text-6xl">
               <span className="block">Analyze iPhone Listings with</span>
-              <span className="block text-blue-600">AI-Powered Insights</span>
+              <span className="block text-[#635bff]">AI-Powered Insights</span>
             </h1>
-            <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+            <p className="mt-3 max-w-md mx-auto text-base text-[#425466] sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
               Get instant analysis of Kleinanzeigen iPhone listings. Detect scams, verify prices, and make safer purchases.
             </p>
 
@@ -394,7 +394,7 @@ export default function Home() {
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
                     placeholder="Paste Kleinanzeigen iPhone URL here..."
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#635bff] focus:border-[#635bff] bg-white"
                   />
                   
                   {/* Random URL Button */}
@@ -411,7 +411,7 @@ export default function Home() {
                 <button
                   onClick={handleAnalyze}
                   disabled={isAnalyzing || !listingUrl}
-                  className={`px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 ${
+                  className={`px-6 py-3 bg-[#635bff] text-white rounded-lg font-medium hover:bg-[#0a2540] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#635bff] disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0 transition-colors duration-200 ${
                     isAnalyzing ? 'cursor-not-allowed' : ''
                   }`}
                 >

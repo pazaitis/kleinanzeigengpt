@@ -3,12 +3,12 @@ import Logo from './Logo'
 
 export default function Footer() {
   return (
-    <footer className="py-12 bg-gray-50">
+    <footer className="py-12 bg-gradient-to-b from-[#635bff]/[0.05] to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <Logo className="h-8 w-8 text-blue-600" />
-            <p className="mt-4 text-gray-600">
+            <Logo className="h-8 w-8 text-[#635bff]" />
+            <p className="mt-4 text-[#425466]">
               AI-powered iPhone listing analysis for safer purchases.
             </p>
           </div>
@@ -21,7 +21,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-gray-600 hover:text-gray-900">
+                <Link href="/pricing" className="text-[#425466] hover:text-[#0a2540]">
                   Pricing
                 </Link>
               </li>

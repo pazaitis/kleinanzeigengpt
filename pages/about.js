@@ -44,17 +44,16 @@ const features = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="pt-16">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-b from-blue-50 to-white">
+      <main className="pt-24 pb-16">
+        <div className="bg-gradient-to-b from-[#635bff]/[0.15] via-[#635bff]/[0.05] to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
             <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              <h1 className="text-4xl font-bold text-[#0a2540] mb-4">
                 About KleinanzeigenGPT
               </h1>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              <p className="text-xl text-[#425466] max-w-2xl mx-auto">
                 We're building the future of iPhone price analysis with AI technology.
                 Our mission is to provide transparent and accurate market insights.
               </p>
@@ -127,12 +126,12 @@ export default function About() {
               {features.map((feature) => (
                 <div key={feature.title} className="text-center">
                   <div className="flex justify-center mb-4">
-                    <feature.icon className="h-12 w-12 text-blue-600" />
+                    <feature.icon className="h-12 w-12 text-[#635bff]" />
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-[#0a2540] mb-2">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">
+                  <p className="text-[#425466]">
                     {feature.description}
                   </p>
                 </div>
@@ -140,7 +139,7 @@ export default function About() {
             </div>
           </div>
         </div>
-      </div>
+      </main>
       <Footer />
     </div>
   )
