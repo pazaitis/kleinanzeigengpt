@@ -5,6 +5,7 @@ import { CheckIcon } from '@heroicons/react/24/solid'
 import Navbar from '../components/Navbar'
 import { loadStripe } from '@stripe/stripe-js'
 import { useState } from 'react'
+import Footer from '../components/Footer'
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -116,7 +117,7 @@ export default function Pricing() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-16">
         {/* Pricing Section */}
@@ -210,6 +211,7 @@ export default function Pricing() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 } 

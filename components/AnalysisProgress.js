@@ -415,7 +415,18 @@ export default function AnalysisProgress({ currentStep, isComplete, listingImage
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Analysis Complete
                 </h3>
-                {/* Final analysis content */}
+                
+                {/* Claude Analysis Results */}
+                {claudeAnalysis && (
+                  <div className="mt-4">
+                    <h4 className="text-md font-medium text-gray-900 mb-2">
+                      Listing Analysis Results
+                    </h4>
+                    <div className="prose prose-sm max-w-none text-gray-600 whitespace-pre-wrap">
+                      {claudeAnalysis}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

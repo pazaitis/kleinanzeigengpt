@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Navbar from '../components/Navbar'
 import { CodeBracketIcon, BeakerIcon, ChatBubbleBottomCenterTextIcon } from '@heroicons/react/24/outline'
+import Footer from '../components/Footer'
 
 const founders = [
   {
@@ -43,7 +44,7 @@ const features = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-16">
         {/* Hero Section */}
@@ -140,6 +141,7 @@ export default function About() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   )
 } 
