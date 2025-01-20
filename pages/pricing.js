@@ -8,7 +8,6 @@ import { useState, useEffect } from 'react'
 import Footer from '../components/Footer'
 import { supabase } from '../supabase'
 import AuthModal from '../components/AuthModal'
-import Toast from '../components/Toast'
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -63,7 +62,6 @@ export default function Pricing() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [selectedPlan, setSelectedPlan] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [toast, setToast] = useState(null)
 
   useEffect(() => {
     checkUser()
@@ -83,6 +81,7 @@ export default function Pricing() {
 
     if (plan.name === 'Free') {
       try {
+        // Update user's subscription tier in the database
         const { error } = await supabase
           .from('subscriptions')
           .upsert({
@@ -96,7 +95,6 @@ export default function Pricing() {
         router.push('/dashboard')
       } catch (error) {
         console.error('Error updating subscription:', error)
-        setToast({ message: 'Error updating subscription', type: 'error' })
       }
       return
     }
@@ -110,33 +108,19 @@ export default function Pricing() {
         },
         body: JSON.stringify({
           userId: user.id,
+          plan: plan.name,
         }),
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.details || 'Failed to create checkout session')
-      }
-
       const { sessionId } = await response.json()
-      
-      // Initialize Stripe
       const stripe = await stripePromise
-      if (!stripe) {
-        throw new Error('Failed to initialize Stripe')
-      }
-
-      // Redirect to Checkout
       const { error } = await stripe.redirectToCheckout({ sessionId })
+      
       if (error) {
-        throw error
+        console.error('Stripe error:', error)
       }
     } catch (error) {
       console.error('Checkout error:', error)
-      setToast({ 
-        message: 'Failed to start checkout process. Please try again.',
-        type: 'error'
-      })
     } finally {
       setIsLoading(false)
     }
@@ -248,14 +232,6 @@ export default function Pricing() {
         onClose={() => setShowAuthModal(false)}
         onSuccess={handleAuthSuccess}
       />
-
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(null)} 
-        />
-      )}
 
       <Footer />
     </div>

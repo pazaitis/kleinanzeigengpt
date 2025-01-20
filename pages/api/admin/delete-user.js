@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Create a Supabase client with the service role key
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -24,17 +23,6 @@ export default async function handler(req, res) {
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ error: 'Not authorized' })
     }
-
-    // Delete all related data first
-    await supabase
-      .from('subscriptions')
-      .delete()
-      .eq('user_id', userId)
-
-    await supabase
-      .from('analyses')
-      .delete()
-      .eq('user_id', userId)
 
     // Delete user from auth
     const { error: authError } = await supabase.auth.admin.deleteUser(userId)

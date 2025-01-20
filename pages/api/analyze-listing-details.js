@@ -1,5 +1,5 @@
 import { Anthropic } from '@anthropic-ai/sdk';
-import { supabase } from '../../lib/supabase';
+import { supabaseAdmin } from '../../supabase';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -56,7 +56,7 @@ Formatiere die Analyse übersichtlich mit Zwischenüberschriften und klaren Warn
     const tokensUsed = message.usage.total_tokens;
 
     // Update the analysis record with token usage
-    await supabase
+    await supabaseAdmin
       .from('analyses')
       .update({ 
         tokens_used: tokensUsed,

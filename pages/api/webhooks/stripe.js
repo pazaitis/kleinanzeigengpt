@@ -1,15 +1,9 @@
 import { buffer } from 'micro'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../../supabase'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-
-// Create a Supabase client with the service role key for admin operations
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
 
 export const config = {
   api: {
@@ -18,31 +12,21 @@ export const config = {
 }
 
 async function updateSubscription(subscription, customerId) {
-  console.log('Updating subscription:', { subscription, customerId })
   try {
-    // First get the user profile by customer ID
-    const { data: profile, error: profileError } = await supabase
+    // Get user by Stripe customer ID
+    const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('stripe_customer_id', customerId)
       .single()
 
-    if (profileError) {
-      console.error('Error fetching profile:', profileError)
-      throw profileError
-    }
+    if (profileError) throw profileError
 
-    if (!profile) {
-      throw new Error(`No profile found for customer ID: ${customerId}`)
-    }
-
-    console.log('Found profile:', profile)
-
-    // Update or create subscription
-    const { data: subscriptionData, error: subscriptionError } = await supabase
+    // Update subscription status
+    const { error: subscriptionError } = await supabase
       .from('subscriptions')
       .upsert({
-        user_id: profile.id,
+        user_id: profiles.id,
         tier: 'pro',
         stripe_subscription_id: subscription.id,
         stripe_customer_id: customerId,
@@ -50,52 +34,11 @@ async function updateSubscription(subscription, customerId) {
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
         cancel_at_period_end: subscription.cancel_at_period_end,
         updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'user_id',
-        returning: true
       })
 
-    if (subscriptionError) {
-      console.error('Error upserting subscription:', subscriptionError)
-      throw subscriptionError
-    }
-
-    console.log('Subscription updated successfully:', subscriptionData)
-    return subscriptionData
+    if (subscriptionError) throw subscriptionError
   } catch (error) {
-    console.error('Error in updateSubscription:', error)
-    throw error
-  }
-}
-
-async function handleCheckoutSession(session) {
-  console.log('Handling checkout session:', session)
-  try {
-    // First update the stripe_customer_id in profiles
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ 
-        stripe_customer_id: session.customer,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', session.client_reference_id)
-
-    if (profileError) {
-      console.error('Error updating profile:', profileError)
-      throw profileError
-    }
-
-    // Get the subscription details
-    const subscription = await stripe.subscriptions.retrieve(session.subscription)
-    console.log('Retrieved subscription:', subscription)
-
-    // Create/update subscription record
-    const subscriptionData = await updateSubscription(subscription, session.customer)
-    console.log('Subscription record created/updated:', subscriptionData)
-
-    return subscriptionData
-  } catch (error) {
-    console.error('Error handling checkout session:', error)
+    console.error('Error updating subscription:', error)
     throw error
   }
 }
@@ -112,7 +55,6 @@ export default async function handler(req, res) {
     let event
     try {
       event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
-      console.log('Received webhook event:', event.type)
     } catch (err) {
       console.error(`Webhook signature verification failed:`, err.message)
       return res.status(400).send(`Webhook Error: ${err.message}`)
@@ -120,24 +62,12 @@ export default async function handler(req, res) {
 
     // Handle the event
     switch (event.type) {
-      case 'checkout.session.completed':
-        const session = event.data.object
-        console.log('Checkout session completed:', session)
-        if (session.mode === 'subscription') {
-          await handleCheckoutSession(session)
-        }
-        break
-
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object
-        console.log('Subscription event:', event.type, subscription)
         await updateSubscription(subscription, subscription.customer)
         break
-
-      default:
-        console.log(`Unhandled event type ${event.type}`)
     }
 
     res.json({ received: true })

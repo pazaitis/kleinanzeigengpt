@@ -55,40 +55,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { userId } = req.body;
-
-    // Validate price ID exists
-    if (!process.env.STRIPE_PRICE_ID) {
-      throw new Error('Missing STRIPE_PRICE_ID environment variable');
-    }
-
-    console.log('Creating checkout session...', {
-      priceId: process.env.STRIPE_PRICE_ID,
-      userId,
-      origin: req.headers.origin
-    });
-
+    console.log('Creating checkout session...');
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID,
+          price_data: {
+            currency: 'eur',
+            product_data: {
+              name: 'KleinanzeigenGPT Pro',
+              description: 'Monthly subscription to KleinanzeigenGPT Pro plan',
+            },
+            unit_amount: 2000,
+            recurring: {
+              interval: 'month',
+            },
+          },
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `${req.headers.origin}/dashboard?success=true`,
-      cancel_url: `${req.headers.origin}/pricing?canceled=true`,
-      client_reference_id: userId,
-      customer_email: req.body.email,
-      metadata: {
-        userId: userId,
-      },
-      subscription_data: {
-        metadata: {
-          userId: userId,
-        },
-      },
+      success_url: `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/pricing`,
     });
 
     console.log('Session created:', session.id);
@@ -106,7 +94,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
     return res.status(500).json({ 
       error: 'Failed to create checkout session',
-      details: error.message,
+      message: error.message,
       success: false,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
