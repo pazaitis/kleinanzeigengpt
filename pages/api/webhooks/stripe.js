@@ -1,9 +1,15 @@
 import { buffer } from 'micro'
 import Stripe from 'stripe'
-import { supabase } from '../../../supabase'
+import { createClient } from '@supabase/supabase-js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+
+// Create a Supabase client with the service role key for admin operations
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+)
 
 export const config = {
   api: {
@@ -14,8 +20,8 @@ export const config = {
 async function updateSubscription(subscription, customerId) {
   console.log('Updating subscription:', { subscription, customerId })
   try {
-    // Get user by Stripe customer ID
-    const { data: profiles, error: profileError } = await supabase
+    // First get the user profile by customer ID
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('id')
       .eq('stripe_customer_id', customerId)
@@ -26,13 +32,17 @@ async function updateSubscription(subscription, customerId) {
       throw profileError
     }
 
-    console.log('Found profile:', profiles)
+    if (!profile) {
+      throw new Error(`No profile found for customer ID: ${customerId}`)
+    }
 
-    // Update subscription status
-    const { error: subscriptionError } = await supabase
+    console.log('Found profile:', profile)
+
+    // Update or create subscription
+    const { data: subscriptionData, error: subscriptionError } = await supabase
       .from('subscriptions')
       .upsert({
-        user_id: profiles.id,
+        user_id: profile.id,
         tier: 'pro',
         stripe_subscription_id: subscription.id,
         stripe_customer_id: customerId,
@@ -46,11 +56,12 @@ async function updateSubscription(subscription, customerId) {
       })
 
     if (subscriptionError) {
-      console.error('Error updating subscription:', subscriptionError)
+      console.error('Error upserting subscription:', subscriptionError)
       throw subscriptionError
     }
 
-    console.log('Subscription updated successfully')
+    console.log('Subscription updated successfully:', subscriptionData)
+    return subscriptionData
   } catch (error) {
     console.error('Error in updateSubscription:', error)
     throw error
@@ -63,7 +74,10 @@ async function handleCheckoutSession(session) {
     // First update the stripe_customer_id in profiles
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ stripe_customer_id: session.customer })
+      .update({ 
+        stripe_customer_id: session.customer,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', session.client_reference_id)
 
     if (profileError) {
@@ -75,8 +89,11 @@ async function handleCheckoutSession(session) {
     const subscription = await stripe.subscriptions.retrieve(session.subscription)
     console.log('Retrieved subscription:', subscription)
 
-    // Update subscription details
-    await updateSubscription(subscription, session.customer)
+    // Create/update subscription record
+    const subscriptionData = await updateSubscription(subscription, session.customer)
+    console.log('Subscription record created/updated:', subscriptionData)
+
+    return subscriptionData
   } catch (error) {
     console.error('Error handling checkout session:', error)
     throw error
