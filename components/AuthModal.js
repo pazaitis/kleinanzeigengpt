@@ -1,7 +1,7 @@
 import { supabase } from '../supabase'
 import AuthForm from './AuthForm'
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen, onClose, onSuccess }) {
   const handleGoogleLogin = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -13,7 +13,11 @@ export default function AuthModal({ isOpen, onClose }) {
         redirectTo: `${window.location.origin}/dashboard`
       },
     })
-    if (error) console.error('Error logging in:', error.message)
+    if (error) {
+      console.error('Error logging in:', error.message)
+    } else {
+      onSuccess?.()
+    }
   }
 
   if (!isOpen) return null
@@ -52,7 +56,7 @@ export default function AuthModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        <AuthForm onClose={onClose} />
+        <AuthForm onClose={onClose} onSuccess={onSuccess} />
       </div>
     </div>
   )

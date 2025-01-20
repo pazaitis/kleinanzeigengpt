@@ -49,6 +49,24 @@ export default function AuthForm({ onClose }) {
     }
   }
 
+  const handleSignupSuccess = async (session) => {
+    try {
+      // Create initial free subscription
+      const { error } = await supabase
+        .from('subscriptions')
+        .insert({
+          user_id: session.user.id,
+          tier: 'free',
+          status: 'active'
+        })
+
+      if (error) throw error
+      onClose()
+    } catch (error) {
+      console.error('Error creating subscription:', error)
+    }
+  }
+
   return (
     <div>
       <div className="flex justify-center space-x-4 mb-6">

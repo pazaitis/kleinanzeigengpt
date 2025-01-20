@@ -9,6 +9,8 @@ import {
   KeyIcon,
   DocumentTextIcon,
   ClockIcon,
+  SparklesIcon,
+  CreditCardIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline'
 
@@ -16,6 +18,7 @@ export default function UserDetails() {
   const router = useRouter()
   const { id } = router.query
   const [user, setUser] = useState(null)
+  const [subscription, setSubscription] = useState(null)
   const [analyses, setAnalyses] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -30,28 +33,40 @@ export default function UserDetails() {
 
   const fetchUserDetails = async () => {
     try {
-      // Fetch user profile
+      // Fetch user profile and subscription
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          subscriptions (
+            tier,
+            status,
+            stripe_subscription_id,
+            stripe_customer_id,
+            current_period_end,
+            cancel_at_period_end,
+            updated_at
+          )
+        `)
         .eq('id', id)
         .single()
 
       if (profileError) throw profileError
+      setUser(profile)
+      setSubscription(profile.subscriptions?.[0])
 
       // Fetch user's analyses
-      const { data: userAnalyses, error: analysesError } = await supabase
+      const { data: analysesData, error: analysesError } = await supabase
         .from('analyses')
         .select('*')
         .eq('user_id', id)
         .order('created_at', { ascending: false })
 
       if (analysesError) throw analysesError
-
-      setUser(profile)
-      setAnalyses(userAnalyses)
+      setAnalyses(analysesData)
     } catch (error) {
       console.error('Error fetching user details:', error)
+      setToast({ message: 'Error loading user details', type: 'error' })
     } finally {
       setIsLoading(false)
     }
@@ -60,9 +75,9 @@ export default function UserDetails() {
   const handleDeleteUser = async () => {
     setIsDeleting(true)
     try {
-      // Get current admin's ID
+      // Get the admin's ID from the current session
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user?.id) throw new Error('No admin session')
+      if (!session) throw new Error('No admin session')
 
       const response = await fetch('/api/admin/delete-user', {
         method: 'DELETE',
@@ -71,20 +86,21 @@ export default function UserDetails() {
         },
         body: JSON.stringify({
           userId: id,
-          adminId: session.user.id
-        })
+          adminId: session.user.id,
+        }),
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.message)
+        throw new Error(error.message || 'Failed to delete user')
       }
 
-      showToast('User deleted successfully', 'success')
+      setToast({ message: 'User deleted successfully', type: 'success' })
       router.push('/admin/users')
     } catch (error) {
       console.error('Error deleting user:', error)
-      showToast(error.message || 'Error deleting user', 'error')
+      setToast({ message: error.message || 'Error deleting user', type: 'error' })
+    } finally {
       setIsDeleting(false)
       setShowDeleteModal(false)
     }
@@ -263,6 +279,88 @@ export default function UserDetails() {
           )}
         </div>
 
+        {/* Subscription Information */}
+        <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Subscription Details
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex items-center">
+              <SparklesIcon className="h-5 w-5 text-yellow-500 mr-2" />
+              <div>
+                <p className="text-sm font-medium text-gray-500">Plan</p>
+                <p className="text-base text-gray-900">
+                  {subscription?.tier?.toUpperCase() || 'FREE'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center">
+              <ClockIcon className="h-5 w-5 text-blue-500 mr-2" />
+              <div>
+                <p className="text-sm font-medium text-gray-500">Status</p>
+                <span className={`inline-flex rounded-full px-2 text-xs font-semibold ${
+                  subscription?.status === 'active'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {subscription?.status || 'inactive'}
+                </span>
+              </div>
+            </div>
+            {subscription?.tier === 'pro' && (
+              <>
+                <div className="flex items-center">
+                  <CalendarIcon className="h-5 w-5 text-green-500 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Next Billing Date</p>
+                    <p className="text-base text-gray-900">
+                      {subscription?.current_period_end
+                        ? new Date(subscription.current_period_end).toLocaleDateString()
+                        : '-'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <CreditCardIcon className="h-5 w-5 text-purple-500 mr-2" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Stripe Customer ID</p>
+                    <p className="text-sm font-mono text-gray-900">
+                      {subscription?.stripe_customer_id || '-'}
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* User Activity */}
+        <div className="bg-white shadow-sm rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">
+            Activity
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total Analyses</p>
+              <p className="text-2xl font-semibold text-gray-900">{analyses.length}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Member Since</p>
+              <p className="text-base text-gray-900">
+                {new Date(user.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Last Analysis</p>
+              <p className="text-base text-gray-900">
+                {analyses[0]
+                  ? new Date(analyses[0].created_at).toLocaleDateString()
+                  : 'No analyses yet'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Delete Confirmation Modal */}
         {showDeleteModal && (
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
@@ -277,14 +375,14 @@ export default function UserDetails() {
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                   disabled={isDeleting}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDeleteUser}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
                   disabled={isDeleting}
                 >
                   {isDeleting ? 'Deleting...' : 'Delete'}

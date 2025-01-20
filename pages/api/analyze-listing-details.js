@@ -1,4 +1,5 @@
 import { Anthropic } from '@anthropic-ai/sdk';
+import { supabase } from '../../lib/supabase';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -50,6 +51,18 @@ Formatiere die Analyse übersichtlich mit Zwischenüberschriften und klaren Warn
     });
 
     const analysis = message.content[0].text;
+
+    // Get token count from response
+    const tokensUsed = message.usage.total_tokens;
+
+    // Update the analysis record with token usage
+    await supabase
+      .from('analyses')
+      .update({ 
+        tokens_used: tokensUsed,
+        maps_calls: 1 // Increment if multiple calls are made
+      })
+      .eq('id', analysisId);
 
     return res.status(200).json({ analysis });
   } catch (error) {

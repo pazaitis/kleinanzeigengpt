@@ -16,7 +16,7 @@ import AdminProtected from './AdminProtected'
 const navigation = [
   { name: 'Dashboard', href: '/admin', icon: HomeIcon },
   { name: 'Users', href: '/admin/users', icon: UsersIcon },
-  { name: 'Analyses', href: '/admin/analyses', icon: DocumentMagnifyingGlassIcon },
+  { name: 'Cost Management', href: '/admin/costs', icon: DocumentMagnifyingGlassIcon },
   { name: 'Settings', href: '/admin/settings', icon: CogIcon },
 ]
 

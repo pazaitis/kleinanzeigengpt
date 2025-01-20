@@ -4,8 +4,11 @@ import Logo from '../components/Logo'
 import { CheckIcon } from '@heroicons/react/24/solid'
 import Navbar from '../components/Navbar'
 import { loadStripe } from '@stripe/stripe-js'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Footer from '../components/Footer'
+import { supabase } from '../supabase'
+import AuthModal from '../components/AuthModal'
+import Toast from '../components/Toast'
 
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
@@ -56,68 +59,101 @@ const pricingPlans = [
 
 export default function Pricing() {
   const router = useRouter()
+  const [user, setUser] = useState(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [toast, setToast] = useState(null)
 
-  const handleProSubscription = async () => {
+  useEffect(() => {
+    checkUser()
+  }, [])
+
+  const checkUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    setUser(session?.user)
+  }
+
+  const handlePlanSelect = async (plan) => {
+    if (!user) {
+      setSelectedPlan(plan)
+      setShowAuthModal(true)
+      return
+    }
+
+    if (plan.name === 'Free') {
+      try {
+        const { error } = await supabase
+          .from('subscriptions')
+          .upsert({
+            user_id: user.id,
+            tier: 'free',
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+
+        if (error) throw error
+        router.push('/dashboard')
+      } catch (error) {
+        console.error('Error updating subscription:', error)
+        setToast({ message: 'Error updating subscription', type: 'error' })
+      }
+      return
+    }
+
+    setIsLoading(true)
     try {
-      setIsLoading(true);
-      console.log('Starting checkout process...');
-      
       const response = await fetch('/api/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
-        body: JSON.stringify({}) // Empty object as body
-      });
+        body: JSON.stringify({
+          userId: user.id,
+        }),
+      })
 
-      console.log('Response status:', response.status);
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.details || 'Failed to create checkout session')
+      }
+
+      const { sessionId } = await response.json()
       
-      // Get the full response text for debugging
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse response:', e);
-        throw new Error('Invalid response from server');
-      }
-
-      if (!data.sessionId) {
-        console.error('No sessionId in response:', data);
-        throw new Error('No session ID received');
-      }
-
-      console.log('Session ID received:', data.sessionId);
-
       // Initialize Stripe
-      const stripe = await stripePromise;
+      const stripe = await stripePromise
       if (!stripe) {
-        throw new Error('Failed to initialize Stripe');
+        throw new Error('Failed to initialize Stripe')
       }
 
-      const { error } = await stripe.redirectToCheckout({
-        sessionId: data.sessionId
-      });
-      
+      // Redirect to Checkout
+      const { error } = await stripe.redirectToCheckout({ sessionId })
       if (error) {
-        console.error('Stripe redirect error:', error);
-        throw error;
+        throw error
       }
-
     } catch (error) {
-      console.error('Checkout error:', error);
-      alert(error.message || 'Failed to start checkout process. Please try again.');
+      console.error('Checkout error:', error)
+      setToast({ 
+        message: 'Failed to start checkout process. Please try again.',
+        type: 'error'
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false)
+    checkUser()
+    if (selectedPlan) {
+      handlePlanSelect(selectedPlan)
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar user={user} />
+
       <main className="pt-24 pb-16">
         <div className="bg-gradient-to-b from-[#635bff]/[0.15] via-[#635bff]/[0.05] to-white">
           <h1 className="text-4xl font-bold text-[#0a2540] mb-4">
@@ -158,7 +194,7 @@ export default function Pricing() {
                 </ul>
 
                 <button
-                  onClick={plan.name === 'Pro' ? handleProSubscription : plan.handleClick}
+                  onClick={() => handlePlanSelect(plan)}
                   disabled={isLoading && plan.name === 'Pro'}
                   className={`mt-8 w-full py-3 px-4 rounded-lg font-medium transition-colors ${
                     plan.buttonStyle
@@ -206,6 +242,21 @@ export default function Pricing() {
           </div>
         </div>
       </main>
+
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
+
+      {toast && (
+        <Toast 
+          message={toast.message} 
+          type={toast.type} 
+          onClose={() => setToast(null)} 
+        />
+      )}
+
       <Footer />
     </div>
   )

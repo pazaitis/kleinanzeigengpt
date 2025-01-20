@@ -1,12 +1,6 @@
 import { buffer } from 'micro'
 import Stripe from 'stripe'
-import { createClient } from '@supabase/supabase-js'
-
-// Initialize Supabase with service role key for admin access
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+import { supabase } from '../../../supabase'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -17,7 +11,8 @@ export const config = {
   },
 }
 
-async function updateSubscriptionInDatabase(subscription, customerId) {
+async function updateSubscription(subscription, customerId) {
+  console.log('Updating subscription:', { subscription, customerId })
   try {
     // Get user by Stripe customer ID
     const { data: profiles, error: profileError } = await supabase
@@ -26,45 +21,71 @@ async function updateSubscriptionInDatabase(subscription, customerId) {
       .eq('stripe_customer_id', customerId)
       .single()
 
-    if (profileError) throw profileError
+    if (profileError) {
+      console.error('Error fetching profile:', profileError)
+      throw profileError
+    }
 
-    // Update or insert subscription
+    console.log('Found profile:', profiles)
+
+    // Update subscription status
     const { error: subscriptionError } = await supabase
       .from('subscriptions')
       .upsert({
         user_id: profiles.id,
-        stripe_customer_id: customerId,
+        tier: 'pro',
         stripe_subscription_id: subscription.id,
+        stripe_customer_id: customerId,
         status: subscription.status,
-        plan_type: subscription.items.data[0].price.lookup_key,
-        current_period_start: new Date(subscription.current_period_start * 1000),
-        current_period_end: new Date(subscription.current_period_end * 1000),
-        updated_at: new Date()
+        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+        cancel_at_period_end: subscription.cancel_at_period_end,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id',
+        returning: true
       })
 
-    if (subscriptionError) throw subscriptionError
+    if (subscriptionError) {
+      console.error('Error updating subscription:', subscriptionError)
+      throw subscriptionError
+    }
 
-    // Update user profile with subscription status
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({
-        is_subscribed: subscription.status === 'active',
-        subscription_status: subscription.status,
-        subscription_plan: subscription.items.data[0].price.lookup_key,
-        updated_at: new Date()
-      })
-      .eq('id', profiles.id)
-
-    if (updateError) throw updateError
+    console.log('Subscription updated successfully')
   } catch (error) {
-    console.error('Error updating subscription in database:', error)
+    console.error('Error in updateSubscription:', error)
+    throw error
+  }
+}
+
+async function handleCheckoutSession(session) {
+  console.log('Handling checkout session:', session)
+  try {
+    // First update the stripe_customer_id in profiles
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ stripe_customer_id: session.customer })
+      .eq('id', session.client_reference_id)
+
+    if (profileError) {
+      console.error('Error updating profile:', profileError)
+      throw profileError
+    }
+
+    // Get the subscription details
+    const subscription = await stripe.subscriptions.retrieve(session.subscription)
+    console.log('Retrieved subscription:', subscription)
+
+    // Update subscription details
+    await updateSubscription(subscription, session.customer)
+  } catch (error) {
+    console.error('Error handling checkout session:', error)
     throw error
   }
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).end()
+    return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
@@ -74,6 +95,7 @@ export default async function handler(req, res) {
     let event
     try {
       event = stripe.webhooks.constructEvent(buf, sig, webhookSecret)
+      console.log('Received webhook event:', event.type)
     } catch (err) {
       console.error(`Webhook signature verification failed:`, err.message)
       return res.status(400).send(`Webhook Error: ${err.message}`)
@@ -81,19 +103,20 @@ export default async function handler(req, res) {
 
     // Handle the event
     switch (event.type) {
+      case 'checkout.session.completed':
+        const session = event.data.object
+        console.log('Checkout session completed:', session)
+        if (session.mode === 'subscription') {
+          await handleCheckoutSession(session)
+        }
+        break
+
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
         const subscription = event.data.object
-        await updateSubscriptionInDatabase(subscription, subscription.customer)
-        break
-
-      case 'checkout.session.completed':
-        const session = event.data.object
-        if (session.mode === 'subscription') {
-          const subscription = await stripe.subscriptions.retrieve(session.subscription)
-          await updateSubscriptionInDatabase(subscription, session.customer)
-        }
+        console.log('Subscription event:', event.type, subscription)
+        await updateSubscription(subscription, subscription.customer)
         break
 
       default:

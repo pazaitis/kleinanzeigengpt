@@ -1,7 +1,10 @@
 import Link from 'next/link'
 import Logo from './Logo'
+import { useCookieSettings } from '../contexts/CookieContext'
 
 export default function Footer() {
+  const { openCookieSettings } = useCookieSettings()
+
   return (
     <footer className="py-12 bg-gradient-to-b from-[#635bff]/[0.05] to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,8 +46,8 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
-            <ul className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-900">Legal</h3>
+            <ul className="mt-4 space-y-4">
               <li>
                 <Link href="/privacy" className="text-gray-600 hover:text-gray-900">
                   Privacy Policy
@@ -53,6 +56,19 @@ export default function Footer() {
               <li>
                 <Link href="/terms" className="text-gray-600 hover:text-gray-900">
                   Terms of Service
+                </Link>
+              </li>
+              <li>
+                <button
+                  onClick={openCookieSettings}
+                  className="text-gray-600 hover:text-gray-900"
+                >
+                  Cookie Settings
+                </button>
+              </li>
+              <li>
+                <Link href="/cookie-policy" className="text-gray-600 hover:text-gray-900">
+                  Cookie Policy
                 </Link>
               </li>
             </ul>

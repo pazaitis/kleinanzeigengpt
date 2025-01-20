@@ -18,6 +18,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.2",
     "@faker-js/faker": "^8.0.2",
+    "@google-cloud/billing": "^4.6.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@stripe/stripe-js": "^5.4.0",
@@ -26,6 +27,8 @@
     "chart.js": "^4.4.7",
     "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.7",
+    "google-auth-library": "^9.15.0",
+    "googleapis": "^144.0.0",
     "micro": "^10.0.1",
     "nanoid": "^5.0.9",
     "next": "^13.4.0",
