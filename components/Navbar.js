@@ -5,11 +5,13 @@ import Logo from './Logo'
 import { supabase } from '../supabase'
 import AuthModal from './AuthModal'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
+import { useSubscription } from '../contexts/SubscriptionContext'
 
 export default function Navbar({ user }) {
   const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { subscriptionStatus } = useSubscription()
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut()
@@ -82,6 +84,26 @@ export default function Navbar({ user }) {
                 >
                   Get Started
                 </button>
+              )}
+              {user && (
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-1 text-sm rounded-full ${
+                    subscriptionStatus === 'pro' 
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {subscriptionStatus === 'pro' ? 'PRO' : 'FREE'}
+                  </span>
+                  
+                  {subscriptionStatus === 'free' && (
+                    <Link
+                      href="/pricing"
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Upgrade
+                    </Link>
+                  )}
+                </div>
               )}
             </div>
           </div>

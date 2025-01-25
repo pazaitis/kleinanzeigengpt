@@ -4,6 +4,7 @@ import { supabase } from '../supabase'
 import Logo from '../components/Logo'
 import ListingsTable from '../components/ListingsTable'
 import Link from 'next/link'
+import RequiresPro from '../components/RequiresPro'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -133,6 +134,14 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Basic features available to all */}
+      <BasicFeatures />
+
+      {/* Premium features */}
+      <RequiresPro>
+        <PremiumFeatures />
+      </RequiresPro>
     </div>
   )
 } 

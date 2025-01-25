@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import { supabaseAdmin } from '../../../supabase';
 
 // More explicit error checking for the API key
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -55,9 +56,52 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Creating checkout session...');
+    const { userId } = req.body
+
+    // Get user's profile
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single()
+
+    if (profileError) {
+      throw new Error(`Error fetching user profile: ${profileError.message}`)
+    }
+
+    let customerId = profile?.stripe_customer_id
+
+    // If user doesn't have a Stripe customer ID, create one
+    if (!customerId) {
+      const { data: userData, error: userError } = await supabaseAdmin
+        .from('profiles')
+        .select('email')
+        .eq('id', userId)
+        .single()
+
+      if (userError) {
+        throw new Error(`Error fetching user data: ${userError.message}`)
+      }
+
+      const customer = await stripe.customers.create({
+        email: userData.email,
+        metadata: {
+          supabase_user_id: userId
+        }
+      })
+
+      customerId = customer.id
+
+      // Update user profile with Stripe customer ID
+      await supabaseAdmin
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('id', userId)
+    }
+
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      customer: customerId,
       line_items: [
         {
           price_data: {
@@ -77,26 +121,11 @@ export default async function handler(req, res) {
       mode: 'subscription',
       success_url: `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/pricing`,
-    });
+    })
 
-    console.log('Session created:', session.id);
-    
-    // Ensure we're sending a properly formatted JSON response
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(200).json({
-      sessionId: session.id,
-      success: true
-    });
-
+    res.status(200).json({ sessionId: session.id })
   } catch (error) {
-    console.error('Stripe error:', error);
-    // Ensure we're sending a properly formatted error response
-    res.setHeader('Content-Type', 'application/json');
-    return res.status(500).json({ 
-      error: 'Failed to create checkout session',
-      message: error.message,
-      success: false,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.error('Error creating checkout session:', error)
+    res.status(500).json({ error: error.message })
   }
 } 
